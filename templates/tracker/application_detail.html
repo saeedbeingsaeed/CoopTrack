@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% load tracker_tags %}
+{% block head_title %}{{ application.company }}{% endblock %}
+{% block content %}
+  <div class="mx-auto max-w-4xl">
+    <nav class="mb-4 text-sm" aria-label="Breadcrumb">
+      <a href="{% url 'tracker:board' %}" class="text-zinc-500 no-underline hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100">← Applications</a>
+    </nav>
+
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div class="min-w-0">
+        <p class="stage-{{ application.stage }} stage-badge"><span class="stage-dot"></span>{{ application.get_stage_display }}</p>
+        <h1 class="mt-2 text-2xl font-semibold tracking-tight break-words">{{ application.company }}</h1>
+        <p class="text-lg text-zinc-600 dark:text-zinc-400">{{ application.role }}</p>
+      </div>
+      <div class="flex gap-2">
+        <a href="{% url 'tracker:edit' application.pk %}" class="btn btn-secondary">Edit</a>
+        <a href="{% url 'tracker:delete' application.pk %}" class="btn btn-ghost text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:text-rose-400 dark:hover:bg-rose-950">Delete</a>
+      </div>
+    </div>
+
+    <div class="mt-8 grid gap-6 lg:grid-cols-3">
+      <div class="space-y-6 lg:col-span-2">
+        <section class="card p-5 sm:p-6" aria-labelledby="details-heading">
+          <h2 id="details-heading" class="text-sm font-semibold">Details</h2>
+          <dl class="mt-4 grid gap-x-6 gap-y-4 text-sm sm:grid-cols-2">
+            <div><dt class="text-zinc-500 dark:text-zinc-400">Applied</dt><dd class="mt-0.5">{{ application.date_applied|date:"M j, Y"|default:"Not yet" }}</dd></div>
+            <div><dt class="text-zinc-500 dark:text-zinc-400">Deadline</dt><dd class="mt-0.5">{% deadline_badge application %}</dd></div>
+            <div><dt class="text-zinc-500 dark:text-zinc-400">Location</dt><dd class="mt-0.5">{{ application.location|default:"—" }}</dd></div>
+            <div><dt class="text-zinc-500 dark:text-zinc-400">Pay</dt><dd class="mt-0.5">{{ application.pay|default:"—" }}</dd></div>
+            <div><dt class="text-zinc-500 dark:text-zinc-400">Resume version</dt><dd class="mt-0.5">{{ application.resume_version|default:"Not tracked" }}</dd></div>
+            <div class="min-w-0"><dt class="text-zinc-500 dark:text-zinc-400">Posting</dt>
+              <dd class="mt-0.5 truncate">{% if application.posting_url %}<a href="{{ application.posting_url }}" target="_blank" rel="noopener noreferrer">{{ application.posting_url|cut:"https://"|cut:"http://" }} ↗</a>{% else %}—{% endif %}</dd></div>
+          </dl>
+        </section>
+
+        <section class="card p-5 sm:p-6" aria-labelledby="notes-heading">
+          <h2 id="notes-heading" class="text-sm font-semibold">Notes</h2>
+          {% if application.notes %}
+            <div class="mt-3 text-sm leading-relaxed break-words text-zinc-700 dark:text-zinc-300">{{ application.notes|linebreaks }}</div>
+          {% else %}
+            <p class="mt-3 text-sm text-zinc-500 dark:text-zinc-400">No notes yet. <a href="{% url 'tracker:edit' application.pk %}">Add some</a></p>
+          {% endif %}
+        </section>
+      </div>
+
+      <aside class="space-y-6">
+        <section class="card p-5 sm:p-6" aria-labelledby="move-heading">
+          <h2 id="move-heading" class="text-sm font-semibold">Move to</h2>
+          {# Works without JavaScript: a plain form post that redirects back here. #}
+          <form method="post" action="{% url 'tracker:stage' application.pk %}" class="mt-3 flex gap-2">
+            {% csrf_token %}
+            <label for="move-to" class="sr-only">New stage</label>
+            <select id="move-to" name="to">
+              {% for value, label in stages %}<option value="{{ value }}" {% if value == application.stage %}selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select>
+            <button type="submit" class="btn btn-secondary">Move</button>
+          </form>
+        </section>
+
+        <section class="card p-5 sm:p-6" aria-labelledby="history-heading">
+          <h2 id="history-heading" class="text-sm font-semibold">History</h2>
+          <ol class="mt-4 space-y-4">
+            {% for change, until in timeline %}
+              <li class="stage-{{ change.to_stage }} relative flex gap-3 text-sm">
+                <span class="stage-dot mt-1.5"></span>
+                <div>
+                  <p class="font-medium">{% if change.from_stage is None %}Added as {{ change.get_to_stage_display }}{% else %}Moved to {{ change.get_to_stage_display }}{% endif %}</p>
+                  <p class="text-xs text-zinc-500 dark:text-zinc-400">
+                    <time datetime="{{ change.changed_at|date:'c' }}">{{ change.changed_at|date:"M j, Y · g:i A" }}</time>
+                  </p>
+                  <p class="text-xs text-zinc-500 dark:text-zinc-400">
+                    {% if until %}{{ change.changed_at|timesince:until }} in {{ change.get_to_stage_display }}{% else %}In {{ change.get_to_stage_display }} for {{ change.changed_at|timesince }}{% endif %}
+                  </p>
+                </div>
+              </li>
+            {% endfor %}
+          </ol>
+        </section>
+      </aside>
+    </div>
+  </div>
+{% endblock %}

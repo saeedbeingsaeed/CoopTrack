@@ -1,0 +1,29 @@
+{% extends "account/base_entrance.html" %}
+{% load allauth %}
+{% block head_title %}Sign up{% endblock %}
+{% block content %}
+  <h1 class="text-xl font-semibold tracking-tight">Create your account</h1>
+  <p class="mt-1 mb-6 text-sm text-zinc-600 dark:text-zinc-400">Free, and takes about ten seconds.
+    {% if google_enabled %}Signing up with Google is recommended: it turns on reminder emails and means you can't get locked out by a forgotten password.{% endif %}</p>
+
+  {% include "socialaccount/snippets/login.html" %}
+
+  {% url 'account_signup' as action_url %}
+  {% element form form=form method="post" action=action_url tags="entrance,signup" %}
+    {% slot body %}
+      {% csrf_token %}
+      {% element fields form=form %}{% endelement %}
+      {{ redirect_field }}
+    {% endslot %}
+    {% slot actions %}
+      {% element button tags="prominent,signup" type="submit" %}Create account{% endelement %}
+    {% endslot %}
+  {% endelement %}
+
+  <p class="mt-4 text-center text-xs text-zinc-500 dark:text-zinc-400">
+    By signing up you agree to how Offerboard handles your data: <a href="{% url 'privacy' %}">Privacy</a>.
+  </p>
+  <p class="mt-6 text-center text-sm text-zinc-600 dark:text-zinc-400">
+    Already have an account? <a href="{{ login_url }}" class="font-medium">Sign in</a>
+  </p>
+{% endblock %}

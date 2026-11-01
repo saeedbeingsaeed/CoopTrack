@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block head_title %}Delete {{ object.company }}{% endblock %}
+{% block content %}
+  <div class="card mx-auto mt-8 max-w-md p-6 sm:p-8">
+    <h1 class="text-lg font-semibold">Delete this application?</h1>
+    <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+      <strong class="text-zinc-900 dark:text-zinc-100">{{ object.role }} at {{ object.company }}</strong> and its stage history will be removed. This can't be undone.
+    </p>
+    <form method="post" class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+      {% csrf_token %}
+      <a href="{% url 'tracker:detail' object.pk %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-danger">Delete</button>
+    </form>
+  </div>
+{% endblock %}

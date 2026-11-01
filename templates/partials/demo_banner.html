@@ -1,0 +1,13 @@
+{% if user.is_authenticated and user.is_demo %}
+  <div class="bg-zinc-900 text-sm text-zinc-100 dark:bg-brand-950">
+    <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-4 gap-y-1 px-4 py-2 text-center sm:px-6 lg:px-8">
+      <p>You're exploring a demo with sample data. Play around: it's deleted when you leave.</p>
+      {# Signing out deletes the demo account, then lands on the sign-up page. #}
+      <form method="post" action="{% url 'account_logout' %}">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{% url 'account_signup' %}">
+        <button type="submit" class="font-semibold text-brand-300 underline-offset-2 hover:underline">Create your own free board →</button>
+      </form>
+    </div>
+  </div>
+{% endif %}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load static %}
+{% block head_title %}Board{% endblock %}
+{% block content %}
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight">Board</h1>
+      <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+        <span class="hidden sm:inline">Drag a card to move it, or use its <span aria-hidden="true">⋯</span> menu.</span>
+        <span class="sm:hidden">Swipe between stages. Tap <span aria-hidden="true">⋯</span> on a card to move it.</span>
+      </p>
+    </div>
+    <a href="{% url 'tracker:create' %}" class="btn btn-primary">
+      <svg class="size-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z"/></svg>
+      Add application
+    </a>
+  </div>
+
+  {% if not object_list %}
+    {% url 'tracker:create' as create_url %}
+    {% include "partials/empty_state.html" with title="Your board is empty" body="Add the first job you're interested in and it shows up here, ready to drag from Saved to Offer." action_url=create_url action_label="Add your first application" %}
+  {% else %}
+    {% partialdef board inline %}
+      {# Refreshes itself after any move, so counts, order and badges always match the database. #}
+      <div id="board" class="-mx-4 mt-6 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-4 transition-opacity sm:mx-0 sm:px-0 xl:grid xl:grid-cols-6 xl:overflow-visible [&.htmx-request]:opacity-60"
+           hx-get="{% url 'tracker:board' %}" hx-trigger="applications-changed from:body" hx-swap="outerHTML">
+        {% for stage, applications in columns %}
+          <section class="stage-{{ stage.value }} flex w-[82vw] shrink-0 snap-start flex-col sm:w-72 xl:w-auto" aria-labelledby="column-{{ stage.value }}">
+            <header class="mb-2 flex items-center gap-2 px-1">
+              <span class="stage-dot"></span>
+              <h2 id="column-{{ stage.value }}" class="truncate text-sm font-semibold" title="{{ stage.label }}">{{ stage.label }}</h2>
+              <span class="text-sm text-zinc-500 tabular-nums dark:text-zinc-400" aria-label="{{ applications|length }} application{{ applications|length|pluralize }}">{{ applications|length }}</span>
+              <a href="{% url 'tracker:create' %}?stage={{ stage.value }}" class="ml-auto grid size-7 place-items-center rounded-md text-zinc-400 no-underline hover:bg-zinc-200/70 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200" aria-label="Add an application to {{ stage.label }}">
+                <svg class="size-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z"/></svg>
+              </a>
+            </header>
+            <ul class="board-list flex min-h-32 flex-1 flex-col gap-2 rounded-xl border border-transparent bg-zinc-100/80 p-2 dark:bg-zinc-900/60"
+                data-board-list data-stage="{{ stage.value }}" aria-labelledby="column-{{ stage.value }}">
+              {% for application in applications %}
+                {% include "tracker/partials/board_card.html" %}
+              {% endfor %}
+              <li class="board-empty pointer-events-none grid flex-1 place-items-center rounded-lg border border-dashed border-zinc-300 p-4 text-center text-xs text-zinc-400 dark:border-zinc-700 dark:text-zinc-500" aria-hidden="true">Drop here</li>
+            </ul>
+          </section>
+        {% endfor %}
+      </div>
+    {% endpartialdef %}
+  {% endif %}
+{% endblock %}
+
+{% block extra_body %}
+  <script src="{% static 'vendor/Sortable.min.js' %}" defer></script>
+  <script src="{% static 'js/board.js' %}" defer></script>
+{% endblock %}

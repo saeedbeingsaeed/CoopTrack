@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{{ digest.subject }}</title></head>
+<body style="margin:0; padding:0; background:#f4f4f5; font-family:-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:#18181b;">
+  <div style="display:none; max-height:0; overflow:hidden;">{{ digest.subject }}</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5; padding:24px 12px;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+        <tr><td style="padding:0 4px 16px; font-size:16px; font-weight:600;">
+          <span style="display:inline-block; width:22px; height:22px; border-radius:6px; background:#059669; vertical-align:middle; margin-right:8px;"></span>
+          <span style="vertical-align:middle;">Offerboard</span>
+        </td></tr>
+        <tr><td style="background:#ffffff; border:1px solid #e4e4e7; border-radius:12px; padding:28px;">
+          <h1 style="margin:0 0 4px; font-size:20px; line-height:28px;">{{ digest.subject }}</h1>
+          <p style="margin:0 0 20px; color:#52525b; font-size:14px;">Here's what needs your attention today.</p>
+
+          {% if digest.deadlines %}
+            <h2 style="margin:0 0 8px; font-size:13px; letter-spacing:.04em; text-transform:uppercase; color:#71717a;">Deadlines in the next {{ deadline_days }} days</h2>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+              {% for app in digest.deadlines %}
+                <tr><td style="padding:10px 0; border-top:1px solid #f4f4f5;">
+                  <a href="{{ site_url }}{% url 'tracker:detail' app.pk %}" style="color:#18181b; font-weight:600; text-decoration:none; font-size:15px;">{{ app.company }}</a>
+                  <div style="color:#52525b; font-size:14px;">{{ app.role }} · {{ app.get_stage_display }}</div>
+                </td>
+                <td align="right" style="padding:10px 0; border-top:1px solid #f4f4f5; white-space:nowrap; font-size:14px; font-weight:600; color:{% if app.deadline == today %}#be123c{% else %}#b45309{% endif %};">
+                  {% if app.deadline == today %}Today{% else %}{{ app.deadline|date:"D, M j" }}{% endif %}
+                </td></tr>
+              {% endfor %}
+            </table>
+          {% endif %}
+
+          {% if digest.stale %}
+            <h2 style="margin:0 0 8px; font-size:13px; letter-spacing:.04em; text-transform:uppercase; color:#71717a;">No update in {{ stale_days }}+ days</h2>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              {% for app in digest.stale %}
+                <tr><td style="padding:10px 0; border-top:1px solid #f4f4f5;">
+                  <a href="{{ site_url }}{% url 'tracker:detail' app.pk %}" style="color:#18181b; font-weight:600; text-decoration:none; font-size:15px;">{{ app.company }}</a>
+                  <div style="color:#52525b; font-size:14px;">{{ app.role }} · {{ app.get_stage_display }}</div>
+                </td>
+                <td align="right" style="padding:10px 0; border-top:1px solid #f4f4f5; white-space:nowrap; font-size:14px; color:#71717a;">
+                  since {{ app.updated_at|date:"M j" }}
+                </td></tr>
+              {% endfor %}
+            </table>
+            <p style="margin:12px 0 0; color:#52525b; font-size:14px;">Worth a follow-up email, or move them to Rejected to keep your board tidy.</p>
+          {% endif %}
+
+          <p style="margin:28px 0 0;">
+            <a href="{{ board_url }}" style="display:inline-block; background:#059669; color:#ffffff; text-decoration:none; font-weight:600; font-size:14px; padding:10px 18px; border-radius:8px;">Open your board</a>
+          </p>
+        </td></tr>
+        <tr><td style="padding:16px 4px; color:#71717a; font-size:12px; line-height:18px;">
+          You get this because email reminders are on in Offerboard.
+          <a href="{{ unsubscribe_url }}" style="color:#71717a;">Turn them off</a> or change them in <a href="{{ settings_url }}" style="color:#71717a;">settings</a>.
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>

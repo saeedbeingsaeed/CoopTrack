@@ -1,0 +1,25 @@
+[project]
+name = "offerboard"
+version = "0.1.0"
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = ["*/migrations/*"]
+
+[tool.ruff.lint]
+# pyflakes, pycodestyle, isort, bugbear, pyupgrade, Django-specific rules, simplifications
+select = ["F", "E", "W", "I", "B", "UP", "DJ", "SIM"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+testpaths = ["tests"]
+# Browser tests are slower and need Playwright's Chromium: run them with `pytest -m e2e`.
+addopts = "--strict-markers -m 'not e2e'"
+markers = ["e2e: end-to-end tests in a real browser (pytest -m e2e)"]
+filterwarnings = [
+    "error::DeprecationWarning",
+    # WhiteNoise notes that collectstatic hasn't run; tests don't need it.
+    "ignore:No directory at:UserWarning",
+]

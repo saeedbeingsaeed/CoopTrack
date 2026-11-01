@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block head_title %}Email reminders{% endblock %}
+{% block body %}
+  <main id="main" class="flex flex-1 flex-col items-center justify-center px-4 py-12">
+    <a href="{% url 'landing' %}" class="mb-8 no-underline hover:no-underline">{% include "partials/logo.html" %}</a>
+    <div class="card w-full max-w-sm p-6 text-center sm:p-8">
+      {% if invalid %}
+        <h1 class="text-lg font-semibold">This link doesn't work</h1>
+        <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">It may have been copied incompletely. You can turn reminders off in your settings instead.</p>
+        <a href="{% url 'settings' %}" class="btn btn-secondary mt-6">Open settings</a>
+      {% elif done %}
+        <h1 class="text-lg font-semibold">Reminders turned off</h1>
+        <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">{{ email }} won't get reminder emails any more. You can turn them back on in settings.</p>
+        <a href="{% url 'settings' %}" class="btn btn-secondary mt-6">Open settings</a>
+      {% else %}
+        <h1 class="text-lg font-semibold">Turn off email reminders?</h1>
+        <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">{{ email }} will stop getting the daily reminder email.</p>
+        <form method="post" class="mt-6">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-primary w-full">Turn off reminders</button>
+        </form>
+      {% endif %}
+    </div>
+  </main>
+{% endblock %}

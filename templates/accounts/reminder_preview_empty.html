@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block head_title %}Reminder preview{% endblock %}
+{% block content %}
+  {% url 'tracker:board' as board_url %}
+  {% include "partials/empty_state.html" with title="No email today" body="Nothing is due in the next 3 days and nothing has gone 2 weeks without an update, so today you wouldn't get an email. Add a deadline to see a preview." action_url=board_url action_label="Back to your board" %}
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block head_title %}Delete account{% endblock %}
+{% block content %}
+  <div class="card mx-auto mt-8 max-w-md p-6 sm:p-8">
+    <h1 class="text-lg font-semibold">Delete your account?</h1>
+    <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+      This permanently deletes <strong class="text-zinc-900 dark:text-zinc-100">{{ user.email }}</strong> and everything in it:
+      {{ user.applications.count }} application{{ user.applications.count|pluralize }}, their history, and your resume versions.
+      It can't be undone.
+    </p>
+    <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+      Want a copy first? <a href="{% url 'tracker:export' %}">Download your data (CSV)</a>.
+    </p>
+    <form method="post" class="mt-6 space-y-4" novalidate>
+      {% csrf_token %}
+      <div class="space-y-1.5">
+        <label for="confirm">Type <strong>delete</strong> to confirm</label>
+        <input id="confirm" name="confirm" type="text" autocomplete="off" required
+               {% if error %}aria-invalid="true" aria-describedby="confirm-error"{% endif %}>
+        {% if error %}<p id="confirm-error" class="field-error">{{ error }}</p>{% endif %}
+      </div>
+      <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <a href="{% url 'settings' %}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-danger">Delete my account</button>
+      </div>
+    </form>
+  </div>
+{% endblock %}

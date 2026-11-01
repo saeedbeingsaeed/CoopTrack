@@ -1,0 +1,11 @@
+{% if deadline %}
+  <span class="inline-flex items-center gap-1.5 whitespace-nowrap
+    {% if tone == 'overdue' or tone == 'urgent' %}font-medium text-rose-700 dark:text-rose-400
+    {% elif tone == 'soon' %}font-medium text-amber-700 dark:text-amber-400
+    {% else %}text-zinc-600 dark:text-zinc-400{% endif %}">
+    <time datetime="{{ deadline|date:'Y-m-d' }}">{{ deadline|date:"M j" }}</time>
+    {% if note %}<span class="rounded-full px-1.5 py-px text-[11px] {% if tone == 'soon' %}bg-amber-100 dark:bg-amber-950{% else %}bg-rose-100 dark:bg-rose-950{% endif %}">{{ note }}</span>{% endif %}
+  </span>
+{% else %}
+  <span class="text-zinc-400 dark:text-zinc-600" aria-label="No deadline">—</span>
+{% endif %}

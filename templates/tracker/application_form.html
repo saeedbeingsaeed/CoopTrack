@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block head_title %}{% if object %}Edit {{ object.company }}{% else %}Add application{% endif %}{% endblock %}
+{% block content %}
+  <div class="mx-auto max-w-2xl">
+    <nav class="mb-4 text-sm" aria-label="Breadcrumb">
+      <a href="{% if object %}{% url 'tracker:detail' object.pk %}{% else %}{% url 'tracker:board' %}{% endif %}" class="text-zinc-500 no-underline hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100">
+        ← {% if object %}{{ object.company }}{% else %}Applications{% endif %}
+      </a>
+    </nav>
+    <h1 class="text-2xl font-semibold tracking-tight">{% if object %}Edit application{% else %}Add an application{% endif %}</h1>
+
+    <form method="post" class="card mt-6 space-y-8 p-5 sm:p-8" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-200" role="alert">{{ form.non_field_errors }}</div>
+      {% elif form.errors %}
+        <p class="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-200" role="alert">Please fix the highlighted fields.</p>
+      {% endif %}
+
+      <fieldset class="grid gap-5 sm:grid-cols-2">
+        <legend class="mb-4 text-sm font-semibold text-zinc-900 dark:text-zinc-100">The job</legend>
+        {% with field=form.company %}{% include "partials/form_field.html" %}{% endwith %}
+        {% with field=form.role %}{% include "partials/form_field.html" %}{% endwith %}
+        {% with field=form.location %}{% include "partials/form_field.html" %}{% endwith %}
+        {% with field=form.pay %}{% include "partials/form_field.html" %}{% endwith %}
+        <div class="sm:col-span-2">{% with field=form.posting_url %}{% include "partials/form_field.html" %}{% endwith %}</div>
+      </fieldset>
+
+      <fieldset class="grid gap-5 sm:grid-cols-3">
+        <legend class="mb-4 text-sm font-semibold text-zinc-900 dark:text-zinc-100">Progress</legend>
+        {% with field=form.stage %}{% include "partials/form_field.html" %}{% endwith %}
+        {% with field=form.date_applied %}{% include "partials/form_field.html" %}{% endwith %}
+        {% with field=form.deadline %}{% include "partials/form_field.html" %}{% endwith %}
+      </fieldset>
+
+      <fieldset class="grid gap-5 sm:grid-cols-2">
+        <legend class="mb-1 text-sm font-semibold text-zinc-900 dark:text-zinc-100">Resume</legend>
+        <p class="text-sm text-zinc-500 sm:col-span-2 dark:text-zinc-400">Track which version you sent to see which one gets more responses. <a href="{% url 'tracker:resumes' %}">Manage versions</a></p>
+        {% with field=form.resume_version %}{% include "partials/form_field.html" %}{% endwith %}
+        {% with field=form.new_resume %}{% include "partials/form_field.html" %}{% endwith %}
+      </fieldset>
+
+      {% with field=form.notes %}{% include "partials/form_field.html" %}{% endwith %}
+
+      <div class="flex flex-col-reverse gap-3 border-t border-zinc-200 pt-6 sm:flex-row sm:justify-end dark:border-zinc-800">
+        <a href="{% if object %}{% url 'tracker:detail' object.pk %}{% else %}{% url 'tracker:board' %}{% endif %}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary">{% if object %}Save changes{% else %}Add application{% endif %}</button>
+      </div>
+    </form>
+  </div>
+{% endblock %}

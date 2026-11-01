@@ -1,0 +1,18 @@
+{% autoescape off %}Hi,
+
+Here's what needs your attention today.
+{% if digest.deadlines %}
+DEADLINES IN THE NEXT {{ deadline_days }} DAYS
+{% for app in digest.deadlines %}- {{ app.company }}, {{ app.role }}: due {% if app.deadline == today %}today{% else %}{{ app.deadline|date:"l, M j" }}{% endif %} ({{ app.get_stage_display }})
+{% endfor %}{% endif %}{% if digest.stale %}
+NO UPDATE IN {{ stale_days }}+ DAYS
+{% for app in digest.stale %}- {{ app.company }}, {{ app.role }}: {{ app.get_stage_display }}, last updated {{ app.updated_at|date:"M j" }}
+{% endfor %}
+Worth a follow-up email, or move them to Rejected to keep your board tidy.
+{% endif %}
+Open your board: {{ board_url }}
+
+---
+You get this because email reminders are on in Offerboard.
+Turn them off: {{ unsubscribe_url }}
+{% endautoescape %}

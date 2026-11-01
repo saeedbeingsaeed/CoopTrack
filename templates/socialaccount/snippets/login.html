@@ -1,0 +1,5 @@
+{# Social sign-in buttons. Only rendered when Google credentials are configured. #}
+{% if google_enabled %}
+  {% include "socialaccount/snippets/provider_list.html" with process="login" %}
+  {% include "allauth/elements/hr.html" %}
+{% endif %}

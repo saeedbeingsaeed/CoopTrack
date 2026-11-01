@@ -1,0 +1,12 @@
+{% extends "allauth/layouts/base.html" %}
+{# Sign in, sign up, password reset: a focused card with no app navigation. #}
+{% block body %}
+  {% include "partials/messages.html" %}
+  <main id="main" class="relative flex flex-1 flex-col items-center justify-center px-4 py-12">
+    <div class="pointer-events-none absolute inset-x-0 top-0 -z-10 h-80 bg-gradient-to-b from-brand-100/70 to-transparent dark:from-brand-950/60" aria-hidden="true"></div>
+    <a href="{% url 'landing' %}" class="mb-8 no-underline hover:no-underline">{% include "partials/logo.html" %}</a>
+    <div class="card w-full max-w-sm p-6 shadow-sm sm:p-8">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+{% endblock %}

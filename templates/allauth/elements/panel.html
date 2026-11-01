@@ -1,0 +1,8 @@
+{% load allauth %}
+<section class="mb-6">
+  <h2 class="mb-3 text-base font-semibold">{% slot title %}{% endslot %}</h2>
+  <div class="space-y-3 text-sm">{% slot body %}{% endslot %}</div>
+  {% if slots.actions %}
+    <div class="mt-4 flex flex-wrap gap-2">{% for action in slots.actions %}{{ action }}{% endfor %}</div>
+  {% endif %}
+</section>

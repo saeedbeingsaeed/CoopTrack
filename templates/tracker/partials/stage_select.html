@@ -1,0 +1,13 @@
+{# Change the stage right from the table. Not part of the filters form, so it posts only its own value. #}
+{# data-current lets app.js put the old value back if the save fails. #}
+<label for="stage-{{ application.pk }}" class="sr-only">Stage for {{ application }}</label>
+<div class="stage-{{ application.stage }} relative w-40 sm:w-48">
+  <span class="stage-dot pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2"></span>
+  <select id="stage-{{ application.pk }}" name="to" data-current="{{ application.stage }}"
+          hx-post="{% url 'tracker:stage' application.pk %}" hx-trigger="change" hx-swap="none"
+          class="w-full rounded-full border-transparent bg-[color-mix(in_oklab,var(--stage)_12%,transparent)] py-1 pr-7 pl-6 text-xs font-medium shadow-none hover:border-zinc-300 dark:hover:border-zinc-700">
+    {% for value, label in stages %}
+      <option value="{{ value }}" {% if value == application.stage %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+</div>

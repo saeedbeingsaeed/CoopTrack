@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block head_title %}Metrics{% endblock %}
+{% block content %}
+  <div>
+    <h1 class="text-2xl font-semibold tracking-tight">Metrics</h1>
+    <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Admins only. Demo accounts are excluded except where noted. Active = added, edited or moved an application.</p>
+  </div>
+
+  <div class="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-5">
+    {% include "tracker/partials/stat_tile.html" with label="Sign-ups" value=metrics.signups note=metrics.signups_7d|stringformat:"d"|add:" in the last 7 days" %}
+    {% include "tracker/partials/stat_tile.html" with label="Active, last 7 days" value=metrics.active_7d note=metrics.active_30d|stringformat:"d"|add:" in the last 30 days" %}
+    {% include "tracker/partials/stat_tile.html" with label="Applications tracked" value=metrics.applications note="by real accounts" %}
+    {% include "tracker/partials/stat_tile.html" with label="Demo sessions" value=metrics.demos_7d note="started in the last 7 days" %}
+    {% include "tracker/partials/stat_tile.html" with label="Accounts deleted" value=metrics.deleted note=metrics.deleted_30d|stringformat:"d"|add:" in the last 30 days" %}
+  </div>
+
+  <section class="card mt-4 p-5 sm:p-6" aria-labelledby="signups-heading">
+    <h2 id="signups-heading" class="text-sm font-semibold">Sign-ups per week</h2>
+    <table class="mt-4 w-full max-w-md text-left text-sm">
+      <thead><tr class="text-xs text-zinc-500 dark:text-zinc-400"><th scope="col" class="py-1 font-medium">Week of</th><th scope="col" class="py-1 font-medium">Sign-ups</th><th class="w-1/2"><span class="sr-only">Bar</span></th></tr></thead>
+      <tbody class="tabular-nums">
+        {% for row in metrics.weekly %}
+          <tr>
+            <td class="py-1">{{ row.week|date:"M j" }}</td>
+            <td class="py-1">{{ row.count }}</td>
+            <td class="py-1"><div class="h-2 rounded bg-zinc-100 dark:bg-zinc-800">{% if row.count %}<div class="h-full rounded bg-brand-600 dark:bg-brand-500" style="width: {% widthratio row.count metrics.weekly_max 100 %}%"></div>{% endif %}</div></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  <p class="mt-4 text-sm"><a href="{% url 'admin:index' %}">Open the Django admin →</a> · <a href="{% url 'admin:accounts_deletedaccount_changelist' %}">Deleted accounts</a></p>
+{% endblock %}

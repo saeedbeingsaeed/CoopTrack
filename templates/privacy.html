@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block head_title %}Privacy{% endblock %}
+{% block content %}
+  <article class="mx-auto max-w-2xl text-sm leading-relaxed text-zinc-700 dark:text-zinc-300 [&_h2]:mt-8 [&_h2]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:text-zinc-900 dark:[&_h2]:text-zinc-100 [&_li]:mt-1 [&_ul]:list-disc [&_ul]:pl-5">
+    <h1 class="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">Privacy</h1>
+    <p class="mt-2 text-zinc-500 dark:text-zinc-400">Last updated October 2026</p>
+
+    <p class="mt-6">Offerboard is a free student project for tracking job applications. This page explains, in plain words, what it stores and why.</p>
+
+    <h2>What Offerboard stores</h2>
+    <ul>
+      <li><strong>Your account:</strong> your email address and a securely hashed password. If you sign in with Google, Offerboard receives your name, email address, profile picture link and Google account ID. It never sees your Google password and asks for nothing else.</li>
+      <li><strong>What you enter:</strong> the applications you add (company, role, link, location, pay, dates, stage, notes, resume version) and the history of stage changes.</li>
+      <li><strong>Settings:</strong> whether you want reminder emails, and the date of the last one sent.</li>
+    </ul>
+    <p class="mt-2">There are no ads, no analytics or tracking scripts, and no cookies except the ones needed to keep you signed in and protect forms.</p>
+
+    <h2>How it's used</h2>
+    <ul>
+      <li>To show your board, table and stats. Only you can see your applications.</li>
+      <li>To send your daily reminder email, if it's turned on and your email address is verified (signing in with Google verifies it). You can turn it off in Settings or with the link in any reminder.</li>
+      <li>The person who runs Offerboard looks at totals (for example, the number of sign-ups). Like the admin of any website, they can technically open the database, but they only look at an individual account to fix a problem you report.</li>
+    </ul>
+    <p class="mt-2">Your data is never sold or shared for marketing.</p>
+
+    <h2>Where it's kept</h2>
+    <p>The website runs on Render and the database is hosted by Supabase (both in the United States). Reminder emails are sent through Gmail.</p>
+
+    <h2>Your choices</h2>
+    <ul>
+      <li>Download everything you've entered at any time: Table → Export CSV.</li>
+      <li>Edit or delete any application whenever you like.</li>
+      <li>Delete your account and all its data yourself, at any time: Settings → Delete account. It's immediate and permanent.
+        Offerboard keeps only an anonymous note that an account was deleted (when it joined, when it was deleted, how many
+        applications it had), with no email address or content, so the site can count deletions.</li>
+    </ul>
+
+    <h2>Demo accounts</h2>
+    <p>"Try the demo" creates a temporary account with sample data. It's deleted when you sign out, or after 24 hours.</p>
+
+    {% if contact_email %}
+      <h2>Questions</h2>
+      <p>Email <a href="mailto:{{ contact_email }}">{{ contact_email }}</a>.</p>
+    {% endif %}
+  </article>
+{% endblock %}

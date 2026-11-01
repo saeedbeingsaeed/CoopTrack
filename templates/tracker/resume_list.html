@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block head_title %}Resume versions{% endblock %}
+{% block content %}
+  <div class="mx-auto max-w-2xl">
+    <h1 class="text-2xl font-semibold tracking-tight">Resume versions</h1>
+    <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Name each version of your resume, pick it when you apply, and the stats page will show which one gets more responses.</p>
+
+    <form method="post" class="card mt-6 flex flex-col gap-3 p-5 sm:flex-row sm:items-start" novalidate>
+      {% csrf_token %}
+      <div class="flex-1">{% with field=form.name %}{% include "partials/form_field.html" %}{% endwith %}</div>
+      <button type="submit" class="btn btn-primary sm:mt-7">Add version</button>
+    </form>
+
+    {% if object_list %}
+      <ul class="card mt-6 divide-y divide-zinc-100 dark:divide-zinc-800">
+        {% for resume in object_list %}
+          <li class="flex items-center justify-between gap-4 px-5 py-3">
+            <div class="min-w-0">
+              <p class="truncate font-medium">{{ resume.name }}</p>
+              <p class="text-xs text-zinc-500 dark:text-zinc-400">Used for {{ resume.application_count }} application{{ resume.application_count|pluralize }}</p>
+            </div>
+            <form method="post" action="{% url 'tracker:resume_delete' resume.pk %}"
+                  onsubmit="return confirm('Delete “{{ resume.name|escapejs }}”? Applications that used it will show “Not tracked”.')">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-ghost px-3 py-1.5 text-rose-600 dark:text-rose-400" aria-label="Delete {{ resume.name }}">Delete</button>
+            </form>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="mt-6 text-center text-sm text-zinc-500 dark:text-zinc-400">No resume versions yet. You can also add one while adding an application.</p>
+    {% endif %}
+  </div>
+{% endblock %}

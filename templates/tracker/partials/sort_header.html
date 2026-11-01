@@ -1,0 +1,11 @@
+{# A sortable column header. It's a submit button for the filters form, so sorting keeps the search and stage. #}
+<th scope="col" class="px-2 py-1.5 font-medium sm:px-2 {{ classes }}" {% if sort == key %}aria-sort="{% if key == 'applied' or key == 'updated' %}descending{% else %}ascending{% endif %}"{% endif %}>
+  <button type="submit" form="filters" name="sort" value="{{ key }}"
+          class="inline-flex items-center gap-1 rounded-md px-2 py-1 hover:bg-zinc-200/60 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100 {% if sort == key %}text-zinc-900 dark:text-zinc-100{% endif %}">
+    {{ label }}
+    <svg class="size-3 {% if sort != key %}opacity-0 group-hover:opacity-40{% endif %}" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+      {% if key == 'applied' or key == 'updated' %}<path fill-rule="evenodd" d="M10 3a.75.75 0 0 1 .75.75v10.638l3.96-4.158a.75.75 0 1 1 1.08 1.04l-5.25 5.5a.75.75 0 0 1-1.08 0l-5.25-5.5a.75.75 0 1 1 1.08-1.04l3.96 4.158V3.75A.75.75 0 0 1 10 3Z" clip-rule="evenodd"/>
+      {% else %}<path fill-rule="evenodd" d="M10 17a.75.75 0 0 1-.75-.75V5.612L5.29 9.77a.75.75 0 0 1-1.08-1.04l5.25-5.5a.75.75 0 0 1 1.08 0l5.25 5.5a.75.75 0 1 1-1.08 1.04l-3.96-4.158V16.25A.75.75 0 0 1 10 17Z" clip-rule="evenodd"/>{% endif %}
+    </svg>
+  </button>
+</th>

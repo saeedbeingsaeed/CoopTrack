@@ -1,0 +1,149 @@
+@import "tailwindcss";
+
+/* Where Tailwind looks for class names. */
+@source "../templates";
+@source "../static/js";
+
+/* Dark mode follows the operating system. */
+@custom-variant dark (@media (prefers-color-scheme: dark));
+
+@theme {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  /* Brand: a deep green, because the goal is the Offer column. */
+  --color-brand-50: oklch(97.9% 0.021 166.113);
+  --color-brand-100: oklch(95% 0.052 163.051);
+  --color-brand-200: oklch(90.5% 0.093 164.15);
+  --color-brand-300: oklch(84.5% 0.143 164.978);
+  --color-brand-400: oklch(76.5% 0.177 163.223);
+  --color-brand-500: oklch(69.6% 0.17 162.48);
+  --color-brand-600: oklch(59.6% 0.145 163.225);
+  --color-brand-700: oklch(50.8% 0.118 165.612);
+  --color-brand-800: oklch(43.2% 0.095 166.913);
+  --color-brand-900: oklch(37.8% 0.077 168.94);
+  --color-brand-950: oklch(26.2% 0.051 172.552);
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-zinc-50 text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand-500;
+  }
+
+  /* Every form field in the app gets the same look, including allauth's. */
+  input:where([type="text"], [type="email"], [type="password"], [type="url"], [type="date"], [type="number"], [type="search"]),
+  select,
+  textarea {
+    @apply block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-xs
+      placeholder:text-zinc-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/25 focus:outline-none
+      dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500;
+  }
+
+  input[type="file"] {
+    @apply block w-full cursor-pointer rounded-lg border border-dashed border-zinc-300 bg-zinc-50 p-3 text-sm text-zinc-600
+      file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-white file:px-3 file:py-1.5 file:text-sm file:font-semibold
+      file:text-zinc-800 file:shadow-xs hover:border-brand-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400
+      dark:file:bg-zinc-800 dark:file:text-zinc-100;
+  }
+
+  input[type="checkbox"] {
+    @apply size-4 rounded border-zinc-300 accent-brand-600;
+  }
+
+  label {
+    @apply text-sm font-medium text-zinc-700 dark:text-zinc-300;
+  }
+
+  a {
+    @apply text-brand-700 underline-offset-2 hover:underline dark:text-brand-400;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold no-underline
+      transition-colors select-none disabled:cursor-not-allowed disabled:opacity-60 hover:no-underline;
+  }
+  .btn-primary {
+    @apply bg-brand-600 text-white shadow-sm hover:bg-brand-700 dark:bg-brand-500 dark:text-brand-950 dark:hover:bg-brand-400;
+  }
+  .btn-secondary {
+    @apply border border-zinc-300 bg-white text-zinc-800 shadow-xs hover:bg-zinc-50
+      dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800;
+  }
+  .btn-ghost {
+    @apply text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100;
+  }
+  .btn-danger {
+    @apply bg-rose-600 text-white shadow-sm hover:bg-rose-700;
+  }
+
+  .card {
+    @apply rounded-xl border border-zinc-200 bg-white shadow-xs dark:border-zinc-800 dark:bg-zinc-900;
+  }
+
+  .field-error {
+    @apply mt-1 text-sm text-rose-600 dark:text-rose-400;
+  }
+
+  /* One colour per stage, used for badges, column headers and chart bars. */
+  .stage-0 { --stage: var(--color-zinc-500); }
+  .stage-1 { --stage: var(--color-sky-500); }
+  .stage-2 { --stage: var(--color-violet-500); }
+  .stage-3 { --stage: var(--color-amber-500); }
+  .stage-4 { --stage: var(--color-brand-500); }
+  .stage-5 { --stage: var(--color-rose-500); }
+
+  .stage-dot {
+    @apply inline-block size-2 shrink-0 rounded-full bg-(--stage);
+  }
+  .stage-badge {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium
+      bg-[color-mix(in_oklab,var(--stage)_14%,transparent)] text-zinc-800 dark:text-zinc-200;
+  }
+}
+
+/* Thin progress bar at the top of the page while an HTMX request runs. */
+#page-progress {
+  transform: scaleX(0);
+  transform-origin: left;
+  opacity: 0;
+}
+#page-progress.htmx-request {
+  opacity: 1;
+  transform: scaleX(0.8);
+  transition: transform 8s cubic-bezier(0.1, 0.8, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* Board ---------------------------------------------------------------------- */
+
+/* "Drop here" only shows in a column with no cards. */
+.board-list:has(.board-card) .board-empty {
+  display: none;
+}
+/* Highlight every column as a drop target while dragging. */
+body.is-dragging .board-list {
+  @apply border-dashed border-zinc-300 dark:border-zinc-700;
+}
+.board-ghost {
+  @apply opacity-40;
+}
+.board-chosen {
+  @apply shadow-lg ring-2 ring-brand-500/40;
+}

@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% load tracker_tags %}
+{% block head_title %}Applications{% endblock %}
+{% block content %}
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight">Applications</h1>
+      <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Everything you've saved or applied to.</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+    <a href="{% url 'tracker:import' %}" class="btn btn-secondary">Import</a>
+    {% if has_any %}<a href="{% url 'tracker:export' %}" class="btn btn-secondary" download>Export CSV</a>{% endif %}
+    <a href="{% url 'tracker:create' %}" class="btn btn-primary">
+      <svg class="size-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z"/></svg>
+      Add application
+    </a>
+    </div>
+  </div>
+
+  {% if not has_any %}
+    {% url 'tracker:create' as create_url %}
+    {% include "partials/empty_state.html" with title="No applications yet" body="Add the first job you're interested in. You can track it from Saved all the way to Offer." action_url=create_url action_label="Add your first application" %}
+  {% else %}
+    {# All filter state (search, stage, sort, page) belongs to this one form. Controls further down #}
+    {# join it with form="filters", so HTMX and the no-JavaScript fallback both send the same query. #}
+    <form id="filters" method="get" action="{% url 'tracker:table' %}" role="search" class="mt-6"
+          hx-get="{% url 'tracker:table' %}" hx-target="#results" hx-swap="outerHTML" hx-push-url="true"
+          hx-trigger="input changed delay:300ms from:#search, change[target.matches('.js-filter')] from:body, submit, applications-changed from:body">
+      <label for="search" class="sr-only">Search applications</label>
+      <div class="relative max-w-md">
+        <svg class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd"/></svg>
+        <input id="search" type="search" name="q" value="{{ query }}" placeholder="Search company, role, location or notes" autocomplete="off" class="pl-9">
+      </div>
+    </form>
+
+    {% partialdef results inline %}
+      <div id="results" class="mt-4 transition-opacity [&.htmx-request]:opacity-50" aria-live="polite">
+        <input type="hidden" name="sort" value="{{ sort }}" form="filters">
+
+        <fieldset class="-mx-4 min-w-0 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
+          <legend class="sr-only">Filter by stage</legend>
+          <div class="flex w-max gap-2">
+            <label class="relative cursor-pointer">
+              <input type="radio" id="stage-filter-all" name="stage" value="" form="filters" class="js-filter peer sr-only" {% if not stage_filter %}checked{% endif %}>
+              <span class="flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-700 peer-checked:border-zinc-900 peer-checked:bg-zinc-900 peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:peer-checked:border-white dark:peer-checked:bg-white dark:peer-checked:text-zinc-900">
+                All <span class="tabular-nums opacity-60">{{ searched_total }}</span>
+              </span>
+            </label>
+            {% for stage, count in stage_counts %}
+              <label class="relative cursor-pointer stage-{{ stage.value }}">
+                <input type="radio" id="stage-filter-{{ stage.value }}" name="stage" value="{{ stage.value }}" form="filters" class="js-filter peer sr-only" {% if stage_filter == stage.value|stringformat:"d" %}checked{% endif %}>
+                <span class="flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-700 peer-checked:border-zinc-900 peer-checked:bg-zinc-900 peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:peer-checked:border-white dark:peer-checked:bg-white dark:peer-checked:text-zinc-900">
+                  <span class="stage-dot"></span>{{ stage.label }} <span class="tabular-nums opacity-60">{{ count }}</span>
+                </span>
+              </label>
+            {% endfor %}
+          </div>
+        </fieldset>
+
+        {% if page_obj.object_list %}
+          <div class="card mt-4 overflow-hidden">
+            <table class="w-full text-left text-sm">
+              <caption class="sr-only">Applications{% if query %} matching “{{ query }}”{% endif %}, sorted by {{ sort }}</caption>
+              <thead class="border-b border-zinc-200 bg-zinc-50 text-xs text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-400">
+                <tr>
+                  {% include "tracker/partials/sort_header.html" with key="company" label="Company" %}
+                  {% include "tracker/partials/sort_header.html" with key="stage" label="Stage" %}
+                  {% include "tracker/partials/sort_header.html" with key="applied" label="Applied" classes="hidden md:table-cell" %}
+                  {% include "tracker/partials/sort_header.html" with key="deadline" label="Deadline" classes="hidden sm:table-cell" %}
+                  <th scope="col" class="hidden px-4 py-2.5 font-medium lg:table-cell">Location</th>
+                  <th scope="col" class="hidden px-4 py-2.5 font-medium xl:table-cell">Resume</th>
+                  {% include "tracker/partials/sort_header.html" with key="updated" label="Updated" classes="hidden lg:table-cell" %}
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
+                {% for application in page_obj.object_list %}
+                  <tr class="group hover:bg-zinc-50 dark:hover:bg-zinc-800/40">
+                    <td class="w-full max-w-0 px-4 py-3 sm:w-[40%] lg:w-[26%]">
+                      <a href="{% url 'tracker:detail' application.pk %}" class="block truncate font-semibold text-zinc-900 no-underline group-hover:underline dark:text-zinc-100">{{ application.company }}</a>
+                      <p class="truncate text-zinc-500 dark:text-zinc-400">{{ application.role }}</p>
+                      {% if application.deadline %}<p class="mt-1 text-xs sm:hidden">{% deadline_badge application %}</p>{% endif %}
+                    </td>
+                    <td class="px-2 py-3 sm:px-4">
+                      {% include "tracker/partials/stage_select.html" %}
+                    </td>
+                    <td class="hidden px-4 py-3 whitespace-nowrap text-zinc-600 md:table-cell dark:text-zinc-400">{{ application.date_applied|date:"M j"|default:"—" }}</td>
+                    <td class="hidden px-4 py-3 sm:table-cell">{% deadline_badge application %}</td>
+                    <td class="hidden max-w-48 truncate px-4 py-3 text-zinc-600 lg:table-cell dark:text-zinc-400">{{ application.location|default:"—" }}</td>
+                    <td class="hidden max-w-40 truncate px-4 py-3 text-zinc-600 xl:table-cell dark:text-zinc-400">{{ application.resume_version|default:"—" }}</td>
+                    <td class="hidden px-4 py-3 whitespace-nowrap text-zinc-500 lg:table-cell dark:text-zinc-400"><time datetime="{{ application.updated_at|date:'c' }}">{{ application.updated_at|ago }}</time></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          {% if is_paginated %}
+            <nav class="mt-4 flex items-center justify-between text-sm text-zinc-600 dark:text-zinc-400" aria-label="Pagination">
+              <p>{{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}</p>
+              <div class="flex gap-2">
+                {% if page_obj.has_previous %}<button type="submit" form="filters" name="page" value="{{ page_obj.previous_page_number }}" class="btn btn-secondary">Previous</button>{% endif %}
+                {% if page_obj.has_next %}<button type="submit" form="filters" name="page" value="{{ page_obj.next_page_number }}" class="btn btn-secondary">Next</button>{% endif %}
+              </div>
+            </nav>
+          {% endif %}
+        {% else %}
+          <div class="card mt-4 px-6 py-12 text-center">
+            <p class="font-semibold">No applications match</p>
+            <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Try a different search or stage.</p>
+            <a href="{% url 'tracker:table' %}" class="btn btn-secondary mt-4">Clear filters</a>
+          </div>
+        {% endif %}
+      </div>
+    {% endpartialdef %}
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block head_title %}Stats{% endblock %}
+{% block content %}
+  <div>
+    <h1 class="text-2xl font-semibold tracking-tight">Stats</h1>
+    <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">How your search is going, from your board's history.</p>
+  </div>
+
+  {% if not summary.applied %}
+    {% url 'tracker:board' as board_url %}
+    {% include "partials/empty_state.html" with title="No stats yet" body="Stats appear once you've moved an application to Applied or beyond. Saved jobs don't count until you apply." action_url=board_url action_label="Go to your board" %}
+  {% else %}
+    {# Headline numbers. One hero figure (response rate); the rest are plain tiles. #}
+    <div class="mt-6 grid gap-4 lg:grid-cols-4">
+      <section class="card p-6 lg:col-span-1 lg:row-span-1" aria-labelledby="rate-label">
+        <h2 id="rate-label" class="text-sm text-zinc-600 dark:text-zinc-400">Response rate</h2>
+        <p class="mt-2 text-5xl font-semibold tracking-tight">{{ summary.response_rate }}%</p>
+        <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">{{ summary.responded }} of {{ summary.applied }} applications heard back</p>
+      </section>
+      <div class="grid grid-cols-3 gap-4 lg:col-span-3">
+        {% include "tracker/partials/stat_tile.html" with label="Applied" value=summary.applied note=summary.total|stringformat:"d"|add:" tracked in total" %}
+        {% include "tracker/partials/stat_tile.html" with label="Interviews" value=summary.interviews note="reached an interview" %}
+        {% include "tracker/partials/stat_tile.html" with label="Offers" value=summary.offers note="so far" %}
+      </div>
+    </div>
+
+    <div class="mt-4 grid gap-4 lg:grid-cols-2">
+      {# Applications per week: a single series, so no legend; the title says what it is. #}
+      <section class="card min-w-0 p-5 sm:p-6 lg:col-span-2" aria-labelledby="weekly-heading">
+        <div class="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 id="weekly-heading" class="text-sm font-semibold">Applications per week</h2>
+          <p class="text-xs text-zinc-500 dark:text-zinc-400">Last 12 weeks · {{ weeks_total }} total · by date applied</p>
+        </div>
+        <div class="mt-6 flex h-44 items-end gap-1 border-b border-zinc-200 sm:gap-2 dark:border-zinc-800" aria-hidden="true">
+          {% for week in weeks %}
+            <div class="group relative flex h-full flex-1 flex-col items-center justify-end">
+              {% if week.count %}
+                {% if week.count == week_max %}<span class="mb-1 text-xs font-medium text-zinc-700 tabular-nums dark:text-zinc-300">{{ week.count }}</span>{% endif %}
+                <div class="w-full max-w-6 rounded-t bg-brand-600 transition-colors group-hover:bg-brand-700 dark:bg-brand-500 dark:group-hover:bg-brand-400"
+                     style="height: {% widthratio week.count week_max 100 %}%"></div>
+              {% endif %}
+              {# Hover tooltip; the "Show as a table" view below carries the same numbers for keyboards and screen readers. #}
+              <div class="pointer-events-none absolute bottom-full z-10 mb-1 hidden rounded-md bg-zinc-900 px-2 py-1 text-xs whitespace-nowrap text-white shadow group-hover:block dark:bg-white dark:text-zinc-900">
+                Week of {{ week.week|date:"M j" }}: {{ week.count }}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+        <div class="mt-2 flex gap-1 text-[11px] text-zinc-500 sm:gap-2 dark:text-zinc-400" aria-hidden="true">
+          {% for week in weeks %}
+            <span class="min-w-0 flex-1 text-center whitespace-nowrap {% if forloop.counter0|divisibleby:3 or forloop.last %}{% else %}invisible sm:visible{% endif %}">{{ week.week|date:"M j" }}</span>
+          {% endfor %}
+        </div>
+        <details class="mt-4 text-sm">
+          <summary class="cursor-pointer text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100">Show as a table</summary>
+          <table class="mt-2 w-full max-w-xs text-left">
+            <thead><tr class="text-xs text-zinc-500"><th scope="col" class="py-1 font-medium">Week of</th><th scope="col" class="py-1 text-right font-medium">Applications</th></tr></thead>
+            <tbody class="tabular-nums">
+              {% for week in weeks %}<tr><td class="py-0.5">{{ week.week|date:"M j, Y" }}</td><td class="py-0.5 text-right">{{ week.count }}</td></tr>{% endfor %}
+            </tbody>
+          </table>
+        </details>
+      </section>
+
+      {# How far applications get. Bars are a share of everything applied to. #}
+      <section class="card p-5 sm:p-6" aria-labelledby="funnel-heading">
+        <h2 id="funnel-heading" class="text-sm font-semibold">How far applications get</h2>
+        <p class="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Share of your {{ summary.applied }} applications that reached each stage, even if they were rejected later.</p>
+        <ol class="mt-5 space-y-4">
+          {% for step in summary.funnel %}
+            <li class="stage-{{ step.stage.value }}">
+              <div class="flex items-baseline justify-between gap-3 text-sm">
+                <span class="flex items-center gap-2"><span class="stage-dot"></span>{{ step.stage.label }}</span>
+                <span class="text-zinc-600 tabular-nums dark:text-zinc-400"><span class="font-medium text-zinc-900 dark:text-zinc-100">{{ step.count }}</span> · {{ step.percent }}%</span>
+              </div>
+              <div class="mt-1.5 h-2.5 rounded bg-zinc-100 dark:bg-zinc-800">
+                {% if step.count %}<div class="h-full rounded bg-brand-600 dark:bg-brand-500" style="width: {{ step.percent }}%"></div>{% endif %}
+              </div>
+            </li>
+          {% endfor %}
+        </ol>
+        <p class="mt-5 text-xs text-zinc-500 dark:text-zinc-400">{{ summary.rejected }} currently rejected.</p>
+      </section>
+
+      {# Response rate per resume version. #}
+      <section class="card p-5 sm:p-6" aria-labelledby="resume-heading">
+        <h2 id="resume-heading" class="text-sm font-semibold">Response rate by resume version</h2>
+        <p class="mt-1 text-xs text-zinc-500 dark:text-zinc-400">A response is an assessment, interview, offer or rejection.</p>
+        {% if resumes|length == 1 and resumes.0.name is None %}
+          <p class="mt-5 text-sm text-zinc-600 dark:text-zinc-400">
+            None of your applications say which resume you sent. Pick a resume version when you add or edit an application to compare them here.
+            <a href="{% url 'tracker:resumes' %}">Set up resume versions</a>
+          </p>
+        {% else %}
+          <ul class="mt-5 space-y-4">
+            {% for row in resumes %}
+              <li>
+                <div class="flex items-baseline justify-between gap-3 text-sm">
+                  <span class="min-w-0 truncate {% if row.name is None %}text-zinc-500 italic dark:text-zinc-400{% endif %}">{{ row.name|default:"Not tracked" }}</span>
+                  <span class="shrink-0 text-zinc-600 tabular-nums dark:text-zinc-400"><span class="font-medium text-zinc-900 dark:text-zinc-100">{{ row.rate }}%</span> · {{ row.responded }} of {{ row.applied }}</span>
+                </div>
+                <div class="mt-1.5 h-2.5 rounded bg-zinc-100 dark:bg-zinc-800">
+                  {% if row.rate %}<div class="h-full rounded bg-brand-600 dark:bg-brand-500" style="width: {{ row.rate }}%"></div>{% endif %}
+                </div>
+                {% if row.applied < 5 %}<p class="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Small sample: fewer than 5 applications.</p>{% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </section>
+    </div>
+  {% endif %}
+{% endblock %}

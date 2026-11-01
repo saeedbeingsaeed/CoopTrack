@@ -1,0 +1,19 @@
+{# Shared look for 403/404/500. Self-contained: works even when the request context is missing. #}
+{% load static %}<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }} · Offerboard</title>
+  <link rel="icon" href="{% static 'img/logo.svg' %}" type="image/svg+xml">
+  <link rel="stylesheet" href="{% static 'dist/app.css' %}">
+</head>
+<body class="flex min-h-full flex-col items-center justify-center px-4 text-center">
+  <main>
+    <p class="text-sm font-semibold text-brand-600 dark:text-brand-400">{{ code }}</p>
+    <h1 class="mt-2 text-3xl font-semibold tracking-tight">{{ title }}</h1>
+    <p class="mx-auto mt-3 max-w-md text-zinc-600 dark:text-zinc-400">{{ body }}</p>
+    <a href="/" class="btn btn-primary mt-8">Back to Offerboard</a>
+  </main>
+</body>
+</html>

@@ -1,0 +1,36 @@
+{% load tracker_tags %}
+{# One card. The company link stretches over the whole card (after:inset-0), so tapping anywhere opens it. #}
+<li id="card-{{ application.pk }}" class="board-card group relative cursor-grab rounded-lg border border-l-4 border-zinc-200 border-l-(--stage) bg-white p-3 shadow-xs transition-shadow hover:shadow-md active:cursor-grabbing dark:border-zinc-800 dark:border-l-(--stage) dark:bg-zinc-900"
+    data-move-url="{% url 'tracker:stage' application.pk %}" data-company="{{ application.company }}">
+  <a href="{% url 'tracker:detail' application.pk %}" class="block truncate pr-7 text-sm font-semibold text-zinc-900 no-underline after:absolute after:inset-0 after:rounded-lg hover:no-underline dark:text-zinc-100" draggable="false">{{ application.company }}</a>
+  <p class="truncate text-xs text-zinc-500 dark:text-zinc-400">{{ application.role }}</p>
+  {% if application.deadline or application.stage_since %}
+    <div class="mt-2 flex items-center justify-between gap-2 text-xs">
+      {% if application.deadline %}{% deadline_badge application %}{% else %}<span></span>{% endif %}
+      {% if application.stage_since %}
+        <span class="text-zinc-400 dark:text-zinc-500" title="In {{ application.get_stage_display }} since {{ application.stage_since|date:'M j' }}">{{ application.stage_since|days_ago }}</span>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {# Move menu: the keyboard and touch alternative to dragging. A plain form, so it also works without JavaScript. #}
+  <details class="move-menu absolute top-1.5 right-1.5 z-10">
+    <summary id="move-{{ application.pk }}" class="grid size-7 cursor-pointer list-none place-items-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 [&::-webkit-details-marker]:hidden"
+             aria-label="Move {{ application.company }}">
+      <svg class="size-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M3 10a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0Zm5.5 0a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0ZM15.5 8.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Z"/></svg>
+    </summary>
+    <form method="post" action="{% url 'tracker:stage' application.pk %}" hx-post="{% url 'tracker:stage' application.pk %}" hx-swap="none"
+          data-move-form data-card-id="{{ application.pk }}"
+          class="card absolute right-0 mt-1 w-48 p-1 shadow-lg">
+      {% csrf_token %}
+      <p class="px-2.5 py-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400">Move to</p>
+      {% for value, label in stages %}
+        {% if value != application.stage %}
+          <button type="submit" name="to" value="{{ value }}" class="stage-{{ value }} flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm text-zinc-700 hover:bg-zinc-100 focus-visible:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800 dark:focus-visible:bg-zinc-800">
+            <span class="stage-dot"></span>{{ label }}
+          </button>
+        {% endif %}
+      {% endfor %}
+    </form>
+  </details>
+</li>

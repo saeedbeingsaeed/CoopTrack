@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block head_title %}Import{% endblock %}
+{% block content %}
+  <div class="mx-auto max-w-2xl">
+    <nav class="mb-4 text-sm" aria-label="Breadcrumb">
+      <a href="{% url 'tracker:table' %}" class="text-zinc-500 no-underline hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100">← Table</a>
+    </nav>
+    <h1 class="text-2xl font-semibold tracking-tight">Import from a spreadsheet</h1>
+    <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+      Upload a CSV file (in Excel or Google Sheets: File → Download / Save As → CSV). Nothing is saved unless every row is valid,
+      and rows already on your board are skipped.
+    </p>
+
+    {% if row_errors %}
+      <div class="mt-6 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-100" role="alert">
+        <p class="font-semibold">Nothing was imported. Fix {{ error_count }} problem{{ error_count|pluralize }} and upload again:</p>
+        <ul class="mt-2 list-disc space-y-1 pl-5">
+          {% for row, field, message in row_errors %}<li>Row {{ row }}, {{ field }}: {{ message }}</li>{% endfor %}
+        </ul>
+        {% if error_count > row_errors|length %}<p class="mt-2">Showing the first {{ row_errors|length }}.</p>{% endif %}
+      </div>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" class="card mt-6 space-y-5 p-5 sm:p-6" novalidate>
+      {% csrf_token %}
+      {% with field=form.file %}{% include "partials/form_field.html" %}{% endwith %}
+      <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <a href="{% url 'tracker:table' %}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary">Import</button>
+      </div>
+    </form>
+
+    <section class="mt-8 text-sm text-zinc-600 dark:text-zinc-400" aria-labelledby="format-heading">
+      <h2 id="format-heading" class="font-semibold text-zinc-900 dark:text-zinc-100">File format</h2>
+      <p class="mt-2">The first row holds column names. <strong class="text-zinc-900 dark:text-zinc-100">Company</strong> and <strong class="text-zinc-900 dark:text-zinc-100">Role</strong> are required; the rest are optional and can be in any order. Up to {{ max_rows }} rows.</p>
+      <p class="mt-2 font-mono text-xs break-words text-zinc-700 dark:text-zinc-300">{% for field, label in columns %}{{ label }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+      <ul class="mt-3 list-disc space-y-1 pl-5">
+        <li>Stage: {{ stages|join:", " }}. Empty means Saved.</li>
+        <li>Dates: <span class="font-mono text-xs">2026-10-31</span> or <span class="font-mono text-xs">10/31/2026</span>.</li>
+        <li>Resume version: a name; new names are created for you.</li>
+        <li>The easiest start: <a href="{% url 'tracker:export' %}">export your board</a> and use that file as a template.</li>
+      </ul>
+    </section>
+  </div>
+{% endblock %}

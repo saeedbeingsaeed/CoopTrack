@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Runs the Tailwind standalone CLI, downloading it first if needed.
+# It's a single binary, so the project needs no Node.js or npm.
+#
+#   bin/tailwind -i assets/app.css -o static/dist/app.css --watch   # while developing
+#   bin/tailwind -i assets/app.css -o static/dist/app.css --minify  # production build
+set -o errexit -o nounset -o pipefail
+
+VERSION="v4.3.3"
+BIN_DIR="$(cd "$(dirname "$0")" && pwd)"
+BINARY="$BIN_DIR/tailwindcss"
+
+if [[ ! -x "$BINARY" ]] || ! "$BINARY" --help 2>/dev/null | grep -q "$VERSION"; then
+  case "$(uname -s)-$(uname -m)" in
+    Linux-x86_64) platform="linux-x64" ;;
+    Linux-aarch64) platform="linux-arm64" ;;
+    Darwin-arm64) platform="macos-arm64" ;;
+    Darwin-x86_64) platform="macos-x64" ;;
+    MINGW*|MSYS*|CYGWIN*) platform="windows-x64.exe" ;;
+    *) echo "Unsupported platform: $(uname -s)-$(uname -m)" >&2; exit 1 ;;
+  esac
+  echo "Downloading Tailwind CSS $VERSION ($platform)..." >&2
+  curl -sSfL -o "$BINARY" "https://github.com/tailwindlabs/tailwindcss/releases/download/$VERSION/tailwindcss-$platform"
+  chmod +x "$BINARY"
+fi
+
+exec "$BINARY" "$@"

@@ -1,0 +1,21 @@
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Local data and build output
+db.sqlite3
+staticfiles/
+static/dist/
+bin/tailwindcss
+
+# Playwright / editors
+test-results/
+.DS_Store
+.idea/
+.vscode/
