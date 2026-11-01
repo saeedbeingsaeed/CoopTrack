@@ -25,7 +25,7 @@
         {# Reminders only go to verified addresses, so nobody can sign up as someone else and spam them. #}
         <div class="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100" role="status">
           <p class="font-semibold">Reminders aren't being sent yet</p>
-          <p class="mt-1">Your email address hasn't been verified, and Offerboard only emails verified addresses.
+          <p class="mt-1">Your email address hasn't been verified, and CoopTrack only emails verified addresses.
             {% if google_enabled %}Sign in with Google once using <strong>{{ user.email }}</strong> to verify it.{% endif %}</p>
           {% if google_enabled %}
             <a href="{% provider_login_url 'google' process='connect' next=request.path %}" class="btn btn-secondary mt-3">Verify with Google</a>
@@ -43,7 +43,7 @@
         <li><a href="{% url 'account_change_password' %}">Change password</a></li>
         <li><a href="{% url 'tracker:resumes' %}">Resume versions</a></li>
         <li><a href="{% url 'tracker:export' %}">Download all your data (CSV)</a></li>
-        <li><a href="{% url 'privacy' %}">Privacy: what Offerboard stores</a></li>
+        <li><a href="{% url 'privacy' %}">Privacy: what CoopTrack stores</a></li>
       </ul>
     </section>
 

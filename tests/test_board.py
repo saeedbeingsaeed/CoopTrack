@@ -89,14 +89,14 @@ def test_cards_have_a_move_menu_for_keyboard_users(signed_in, user, make_applica
 
     assert f'id="move-{application.pk}"' in content
     assert f'aria-label="Move {application.company}"' in content
-    # The menu offers every stage except the current one.
-    assert content.count('name="to" value=') == len(Stage) - 1
+    # The menu offers exactly the moves the card's current stage allows (State pattern).
+    assert content.count('name="to" value=') == len(application.state.next_stages)
 
 
 def test_board_query_count_does_not_grow_with_cards(signed_in, user, make_application, django_assert_max_num_queries):
     for i in range(40):
-        application = make_application(user, company=f"C{i}", stage=i % len(Stage))
-        application.move_to((i + 1) % len(Stage))
+        application = make_application(user, company=f"C{i}", stage=i % Stage.OFFER)
+        application.move_to(Stage.REJECTED)
 
     # session + user + one query for every card (with its stage_since).
     with django_assert_max_num_queries(3):

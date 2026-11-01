@@ -65,7 +65,10 @@ def test_every_app_page_requires_sign_in(client):
         try:
             url = reverse(name)
         except Exception:
-            url = reverse(name, kwargs={"pk": 1})
+            try:
+                url = reverse(name, kwargs={"pk": 1})
+            except Exception:
+                url = reverse(name, kwargs={"posting_id": "x"})
         response = client.get(url)
         assert response.status_code == 302, name
         assert response.url.startswith(reverse("account_login")), name

@@ -1,7 +1,7 @@
 # Render Blueprint: Render → New → Blueprint → pick this repo.
 services:
   - type: web
-    name: offerboard
+    name: cooptrack
     runtime: python
     plan: free
     region: ohio
@@ -20,5 +20,9 @@ services:
         sync: false
       - key: CONTACT_EMAIL
         sync: false # shown on the privacy page
+      - key: ADZUNA_APP_ID
+        sync: false # from developer.adzuna.com; without it Find jobs shows sample postings
+      - key: ADZUNA_APP_KEY
+        sync: false
       - key: TIME_ZONE
         value: America/Toronto

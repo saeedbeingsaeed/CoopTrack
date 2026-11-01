@@ -1,17 +1,18 @@
 {% include "partials/demo_banner.html" %}
 <header class="sticky top-0 z-40 border-b border-zinc-200 bg-white/85 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/85">
   <div class="mx-auto flex h-14 max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
-    <a href="{% if user.is_authenticated %}{% url 'tracker:board' %}{% else %}{% url 'landing' %}{% endif %}" class="no-underline hover:no-underline {% if user.is_authenticated %}max-sm:[&_.logo-text]:hidden{% endif %}" aria-label="Offerboard home">
+    <a href="{% if user.is_authenticated %}{% url 'tracker:board' %}{% else %}{% url 'landing' %}{% endif %}" class="no-underline hover:no-underline {% if user.is_authenticated %}max-sm:[&_.logo-text]:hidden{% endif %}" aria-label="CoopTrack home">
       {% include "partials/logo.html" %}
     </a>
 
     {% if user.is_authenticated %}
       <nav class="flex items-center gap-1 text-sm" aria-label="Main">
         {% with current=request.resolver_match.url_name %}
-          {% url 'tracker:board' as board_url %}{% url 'tracker:table' as table_url %}{% url 'tracker:stats' as stats_url %}
+          {% url 'tracker:board' as board_url %}{% url 'tracker:table' as table_url %}{% url 'tracker:stats' as stats_url %}{% url 'tracker:jobs' as jobs_url %}
           <a href="{{ board_url }}" class="btn btn-ghost px-3 py-1.5 {% if current == 'board' %}bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-white{% endif %}" {% if current == 'board' %}aria-current="page"{% endif %}>Board</a>
           <a href="{{ table_url }}" class="btn btn-ghost px-3 py-1.5 {% if current == 'table' %}bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-white{% endif %}" {% if current == 'table' %}aria-current="page"{% endif %}>Table</a>
           <a href="{{ stats_url }}" class="btn btn-ghost px-3 py-1.5 {% if current == 'stats' %}bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-white{% endif %}" {% if current == 'stats' %}aria-current="page"{% endif %}>Stats</a>
+          <a href="{{ jobs_url }}" class="btn btn-ghost px-3 py-1.5 {% if current == 'jobs' %}bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-white{% endif %}" {% if current == 'jobs' %}aria-current="page"{% endif %}>Find jobs</a>
         {% endwith %}
       </nav>
 

@@ -7,7 +7,9 @@
           hx-post="{% url 'tracker:stage' application.pk %}" hx-trigger="change" hx-swap="none"
           class="w-full rounded-full border-transparent bg-[color-mix(in_oklab,var(--stage)_12%,transparent)] py-1 pr-7 pl-6 text-xs font-medium shadow-none hover:border-zinc-300 dark:hover:border-zinc-700">
     {% for value, label in stages %}
-      <option value="{{ value }}" {% if value == application.stage %}selected{% endif %}>{{ label }}</option>
+      {% if value == application.stage or value in application.state.next_stages %}
+        <option value="{{ value }}" {% if value == application.stage %}selected{% endif %}>{{ label }}</option>
+      {% endif %}
     {% endfor %}
   </select>
 </div>

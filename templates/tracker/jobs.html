@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block head_title %}Find jobs{% endblock %}
+{% block content %}
+  <div>
+    <h1 class="text-2xl font-semibold tracking-tight">Find jobs</h1>
+    <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Search live postings from Adzuna and save the ones you like to your board.</p>
+  </div>
+
+  <form method="get" action="{% url 'tracker:jobs' %}" role="search" class="card mt-6 grid gap-3 p-4 sm:grid-cols-[2fr_1.5fr_1.5fr_auto] sm:items-end"
+        hx-get="{% url 'tracker:jobs' %}" hx-target="#results" hx-swap="outerHTML" hx-push-url="true">
+    <div>
+      <label for="job-q" class="text-sm font-medium">What</label>
+      <input id="job-q" type="search" name="q" value="{{ query }}" placeholder="software developer co-op" required class="mt-1">
+    </div>
+    <div>
+      <label for="job-where" class="text-sm font-medium">Where</label>
+      <input id="job-where" type="text" name="where" value="{{ where }}" placeholder="Hamilton, ON" class="mt-1">
+    </div>
+    <div>
+      <label for="job-rank" class="text-sm font-medium">Sort by</label>
+      <select id="job-rank" name="rank" class="mt-1">
+        {% for ranking in rankings %}<option value="{{ ranking.key }}" {% if ranking.key == rank %}selected{% endif %}>{{ ranking.label }}</option>{% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Search</button>
+  </form>
+
+  {% partialdef results inline %}
+    <div id="results" class="mt-6 transition-opacity [&.htmx-request]:opacity-50" aria-live="polite">
+      {% if search_error %}
+        <p class="card border-rose-200 bg-rose-50 p-4 text-sm text-rose-900 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-100">{{ search_error }}</p>
+      {% elif not searched %}
+        {% include "partials/empty_state.html" with title="Search for co-op and internship postings" body="Try “software developer co-op” in Toronto, then sort by co-op roles, pay or date. Saved postings go to your board in Saved." %}
+      {% elif not postings %}
+        {% include "partials/empty_state.html" with title="No postings found" body="Try fewer or different words, or leave Where empty." %}
+      {% else %}
+        <p class="text-sm text-zinc-600 dark:text-zinc-400">
+          {{ postings|length }} posting{{ postings|length|pluralize }}
+          {% if is_sample %}· <strong>Sample postings</strong>: live search turns on when Adzuna keys are set.{% else %}from Adzuna{% endif %}
+        </p>
+        <ul class="mt-3 grid gap-3 lg:grid-cols-2">
+          {% for posting in postings %}
+            <li class="card flex flex-col gap-2 p-4">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <h2 class="text-sm font-semibold break-words">
+                    {% if posting.url %}<a href="{{ posting.url }}" target="_blank" rel="noopener noreferrer" class="text-zinc-900 dark:text-zinc-100">{{ posting.title }} ↗</a>{% else %}{{ posting.title }}{% endif %}
+                  </h2>
+                  <p class="text-sm text-zinc-600 dark:text-zinc-400">{{ posting.company }}{% if posting.location %} · {{ posting.location }}{% endif %}</p>
+                </div>
+                <div class="shrink-0">
+                  {% if posting.url in saved_urls %}
+                    <span class="stage-badge stage-0"><span class="stage-dot"></span>On your board</span>
+                  {% else %}
+                    <form method="post" action="{% url 'tracker:save_posting' posting.id %}"
+                          hx-post="{% url 'tracker:save_posting' posting.id %}" hx-swap="outerHTML">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-secondary px-3 py-1.5">Save to board</button>
+                    </form>
+                  {% endif %}
+                </div>
+              </div>
+              <p class="text-xs text-zinc-500 dark:text-zinc-400">
+                {% if posting.pay %}{{ posting.pay }} · {% endif %}{% if posting.created %}posted {{ posting.created|timesince }} ago{% endif %}
+              </p>
+              {% if posting.description %}<p class="line-clamp-3 text-sm text-zinc-700 dark:text-zinc-300">{{ posting.description }}</p>{% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </div>
+  {% endpartialdef %}
+{% endblock %}
+
+{% partialdef saved %}
+  <a href="{% url 'tracker:detail' application.pk %}" class="stage-badge stage-0 no-underline"><span class="stage-dot"></span>On your board</a>
+{% endpartialdef %}

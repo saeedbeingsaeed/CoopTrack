@@ -13,6 +13,6 @@ Worth a follow-up email, or move them to Rejected to keep your board tidy.
 Open your board: {{ board_url }}
 
 ---
-You get this because email reminders are on in Offerboard.
+You get this because email reminders are on in CoopTrack.
 Turn them off: {{ unsubscribe_url }}
 {% endautoescape %}

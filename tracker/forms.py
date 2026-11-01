@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Application, ResumeVersion
+from .models import Application, ResumeVersion, Stage
 
 
 class DateInput(forms.DateInput):
@@ -51,6 +51,15 @@ class ApplicationForm(forms.ModelForm):
         # validation ("Select a valid choice"), so it can't be linked.
         self.fields["resume_version"].queryset = ResumeVersion.objects.for_user(user)
         self.fields["resume_version"].empty_label = "Not tracked"
+        # Only offer stages the current one can move to (same rules as the board and CLI).
+        if self.instance.pk:
+            current = self.instance.state
+            allowed = {current.stage, *current.next_stages}
+            self.fields["stage"].choices = [(value, label) for value, label in Stage.choices if value in allowed]
+            if current.is_final:
+                self.fields[
+                    "stage"
+                ].help_text = "Final stage. To reverse the last move, use Undo on the application page."
 
     def save(self, commit=True):
         application = super().save(commit=False)

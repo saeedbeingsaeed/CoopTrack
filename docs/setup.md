@@ -118,13 +118,23 @@ URL in the error message (check `http` vs `https` and the trailing slash).
 
 ---
 
-## 4. Reminder emails (Gmail + GitHub Actions)
+## 4. Job search (Adzuna)
+
+1. Register at <https://developer.adzuna.com> (free) and open **Dashboard → API access details**.
+2. In Render, set `ADZUNA_APP_ID` and `ADZUNA_APP_KEY` on the service, and save (it redeploys).
+3. Open **Find jobs** and search. Results now say "from Adzuna"; before the keys are set, the page shows
+   labelled sample postings so the feature can still be tried.
+
+To use the command-line tool against the deployed database, put the same `DATABASE_URL` and Adzuna keys in your
+local `.env` and run `python manage.py cooptrack --user you@example.com list`.
+
+## 5. Reminder emails (Gmail + GitHub Actions)
 
 The daily reminder email is sent by a scheduled GitHub Actions workflow
 (`.github/workflows/reminders.yml`), not by Render: Render's free tier blocks
 outgoing email. The same daily run keeps the Supabase project from pausing.
 
-### 4.1 The Gmail account
+### 5.1 The Gmail account
 
 Use a Gmail account made just for Offerboard (not your personal one).
 
@@ -132,7 +142,7 @@ Use a Gmail account made just for Offerboard (not your personal one).
 2. **Security → App passwords** (or search "App passwords") → create one named `Offerboard`.
    Copy the 16-character password; Google only shows it once. Remove the spaces.
 
-### 4.2 GitHub secrets and variables
+### 5.2 GitHub secrets and variables
 
 In the GitHub repo: **Settings → Secrets and variables → Actions**.
 
@@ -154,7 +164,7 @@ In the GitHub repo: **Settings → Secrets and variables → Actions**.
 **Do not** add `SMTP_USERNAME` / `SMTP_PASSWORD` to Render. Render can't send email, and
 with them set the password-reset page would try and time out.
 
-### 4.3 Try it
+### 5.3 Try it
 
 1. GitHub repo → **Actions** → **Daily reminders** → **Run workflow**. Leave
    "Only list who would be emailed" ticked → **Run workflow**. Open the run: the log

@@ -1,23 +1,30 @@
-# Offerboard
+# CoopTrack
 
-[![CI](https://github.com/saeedbeingsaeed/offerboard/actions/workflows/ci.yml/badge.svg)](https://github.com/saeedbeingsaeed/offerboard/actions/workflows/ci.yml)
+[![CI](https://github.com/saeedbeingsaeed/cooptrack/actions/workflows/ci.yml/badge.svg)](https://github.com/saeedbeingsaeed/cooptrack/actions/workflows/ci.yml)
 
-**Track co-op and internship applications on one board.** Move each job from Saved to Offer,
-keep deadlines and notes in one place, get a morning email about what's due, and see what's
-actually working in your search.
+**Find co-op and internship postings, and track every application on one board.** Search live postings,
+save the ones you like, move each job from Saved to Offer, undo a move you didn't mean, keep deadlines and
+notes in one place, get a morning email about what's due, and see what's actually working in your search.
 
-**[Try the live demo →](https://offerboard.onrender.com)** One click, no sign-up: you get your own board filled with sample data.
-(It runs on a free server that sleeps when idle, so the first load can take up to a minute.)
+CoopTrack is the term project for SFWRTECH 4SA3 Software Architecture (Saeed Bafana, 400680402), built on
+[Offerboard](https://github.com/saeedbeingsaeed/OfferBoard), my own application tracker. What was added for
+the course is summarised in [Course requirements](#course-requirements-sfwrtech-4sa3).
 
 ![The board](docs/screenshots/board.png)
 
 ## Features
 
+- **Find jobs.** Search live postings from the [Adzuna](https://developer.adzuna.com) job search API, sort them
+  by best match, newest, highest pay, or co-op and internships first, and save one to your board in one click.
 - **Board.** Six stages: Saved, Applied, Online Assessment, Interview, Offer, Rejected. Drag cards between them, or
-  use each card's Move menu with the keyboard. Moves save in the background; if a save fails, the card
-  goes back and you're told why.
+  use each card's Move menu with the keyboard. Applications move forward only (you can skip stages, and reject
+  from any open stage); Offer and Rejected are final. A move that isn't allowed goes back and says why.
+- **Undo.** Every move shows a toast with an Undo button, and each application page has "Undo last move". Undo
+  goes back one move at a time, up to ten moves.
+- **Command line.** `python manage.py cooptrack` lists, moves, undoes and searches on the same data as the website.
 - **Table.** Search, filter by stage, sort by any column, change a stage inline. Works on a phone.
-- **History.** Every stage change is recorded with a timestamp; each application shows how long it spent in each stage.
+- **History.** Every stage change is recorded with a timestamp, whether it was an undo, and which interface made
+  it (website, command line or CSV import); each application shows how long it spent in each stage.
 - **Reminders.** A daily email with deadlines in the next 3 days and applications with no update in 2 weeks.
   One click to turn off.
 - **Stats.** Applications per week, response rate, how far applications get, and response rate per resume version.
@@ -30,9 +37,13 @@ actually working in your search.
 |---|---|
 | ![Table view](docs/screenshots/table.png) | ![Stats page](docs/screenshots/stats.png) |
 
-| Application page | Reminder email | Phone, dark mode |
-|---|---|---|
-| ![Application detail](docs/screenshots/detail.png) | ![Reminder email](docs/screenshots/email.png) | ![Board on a phone](docs/screenshots/board-mobile-dark.png) |
+| Find jobs | Application page |
+|---|---|
+| ![Find jobs](docs/screenshots/jobs.png) | ![Application detail](docs/screenshots/detail.png) |
+
+| Reminder email | Phone, dark mode |
+|---|---|
+| ![Reminder email](docs/screenshots/email.png) | ![Board on a phone](docs/screenshots/board-mobile-dark.png) |
 
 ## Architecture
 
@@ -53,12 +64,17 @@ flowchart LR
         cron["Daily job<br/>send_reminders<br/>purge_demo_users"]
     end
 
+    cli["Command-line tool<br/>manage.py cooptrack"]
+    adzuna["Adzuna<br/>job search API"]
     google["Google sign-in<br/>(OAuth)"]
     gmail["Gmail SMTP"]
     inbox["Users' inboxes"]
 
     browser -- "HTML pages and<br/>HTMX partial updates" --> app
     app -- "Django ORM<br/>(session pooler)" --> db
+    app -- "HTTPS / JSON" --> adzuna
+    cli -- "same ApplicationService,<br/>Django ORM" --> db
+    cli --> adzuna
     browser <-- "sign in" --> google
     cron -- "Django ORM" --> db
     cron --> gmail --> inbox
@@ -116,9 +132,59 @@ hammering the button can't fill the free database.
 from `hx-headers`) and drag and drop. In production: `DEBUG` off by default, secrets from environment variables,
 HTTPS redirect, HSTS, secure cookies, `ALLOWED_HOSTS` set. CSV export neutralises spreadsheet formulas.
 
+## Course requirements (SFWRTECH 4SA3)
+
+| Requirement | Where |
+|---|---|
+| Cloud database, read and write | PostgreSQL on Supabase (any PostgreSQL works, e.g. Neon), through the Django ORM |
+| Third-party web service | Adzuna Job Search REST API: [`tracker/adzuna.py`](tracker/adzuna.py) |
+| Three design patterns, implemented by hand | State, Strategy and Memento in [`tracker/domain/`](tracker/domain/) (below) |
+| A pattern not covered in class | Memento ([Refactoring Guru](https://refactoring.guru/design-patterns/memento)) |
+| One functionality through two interfaces, one implementation | Website and command-line tool, both using [`tracker/services.py`](tracker/services.py) |
+| Two non-functional categories | Traceability and maintainability (below) |
+
+**Design patterns.** Each is documented in a comment block at the top of its file.
+
+- **State** ([`tracker/domain/stages.py`](tracker/domain/stages.py)). `Application` is the context; each stage
+  is a `StageState` object that decides which stages come next, explains a refused move, and applies its own
+  rules on save (every stage past Saved fills in the applied date). The board menus, the table dropdown, the
+  edit form and the command-line tool all ask the state, so the rules are written once.
+- **Strategy** ([`tracker/domain/ranking.py`](tracker/domain/ranking.py)). `BestMatch`, `Newest`, `HighestPay`
+  and `StudentRolesFirst` are interchangeable `RankingStrategy` classes for ordering search results, chosen at
+  runtime from the "Sort by" menu or `--rank`.
+- **Memento** ([`tracker/domain/undo.py`](tracker/domain/undo.py)). `Application` (originator) creates a
+  `StageMemento` before each move and restores itself from one on undo; `UndoHistory` (caretaker) keeps them in
+  the `StageSnapshot` table without reading them, so a move made on the website can be undone from the command
+  line and the other way round.
+
+**Two interfaces, one implementation.** `ApplicationService` holds the moving, undoing, searching and saving
+logic. The website's views (`tracker/views.py`) and the command-line tool
+(`tracker/management/commands/cooptrack.py`) only convert their own input into a service call and its result
+or error into their own output. `tests/test_cooptrack.py` moves one application through both interfaces and
+checks that the same rule refuses the same move in each.
+
+```bash
+python manage.py cooptrack --user you@example.com list --stage applied
+python manage.py cooptrack --user you@example.com move 12 interview
+python manage.py cooptrack --user you@example.com undo 12
+python manage.py cooptrack --user you@example.com history 12
+python manage.py cooptrack --user you@example.com search "software developer co-op" --where Hamilton --rank student
+python manage.py cooptrack --user you@example.com save adzuna-5012345678
+```
+
+**Traceability.** Every stage change, from any interface, writes a `StageChange` row in the same transaction as
+the change, recording the from and to stages, the time, which interface made it, and whether it was an undo.
+The application page and the `history` command show it.
+
+**Maintainability.** Code is split by responsibility: the domain package holds the rules and knows nothing about
+HTTP or the command line; the service is the only entry point for changes; views and the command only adapt
+input and output; per-user access is enforced in one place (`tracker/scoping.py`). The service depends on an
+abstract `JobSource`, so tests use a fake and the site falls back to labelled sample postings when no Adzuna keys
+are set. 179 tests and a browser test run in CI on every push.
+
 ## Tech stack
 
-Python 3.12+ · Django 6.1 · django-allauth · HTMX · SortableJS · Tailwind CSS 4 (standalone CLI) · Postgres on
+Python 3.12+ · Django 6.1 · django-allauth · Adzuna API · HTMX · SortableJS · Tailwind CSS 4 (standalone CLI) · Postgres on
 Supabase · gunicorn + WhiteNoise on Render · pytest, pytest-django, Playwright · Ruff · GitHub Actions
 
 ## Run it locally
@@ -126,11 +192,12 @@ Supabase · gunicorn + WhiteNoise on Render · pytest, pytest-django, Playwright
 Needs Python 3.12+ and `curl`. No Node.js; `bin/tailwind` downloads the Tailwind binary for your machine.
 
 ```bash
-git clone https://github.com/saeedbeingsaeed/offerboard.git && cd offerboard
+git clone https://github.com/saeedbeingsaeed/cooptrack.git && cd cooptrack
 python -m venv .venv
 source .venv/bin/activate                 # Windows: .venv\Scripts\activate
 pip install -r requirements-dev.txt
 cp .env.example .env                      # the defaults work as-is: SQLite, DEBUG on, emails printed to the terminal
+                                          # add ADZUNA_APP_ID and ADZUNA_APP_KEY for live job search
 
 python manage.py migrate
 bin/tailwind -i assets/app.css -o static/dist/app.css    # add --watch while editing templates
@@ -172,6 +239,10 @@ Actions secrets.
 config/            settings (one file, configured by environment variables), URLs
 accounts/          custom User, demo mode, settings page, unsubscribe, admin metrics
 tracker/           applications: models, per-user scoping, views, forms, stats, CSV, reminders
+  domain/          State, Strategy and Memento patterns, postings, errors (no HTTP, no CLI)
+  services.py      ApplicationService: the core logic both interfaces use
+  adzuna.py        Adzuna job search client
+  management/commands/cooptrack.py   the command-line interface
 templates/         pages and HTMX partials; allauth pages restyled
 assets/app.css     Tailwind source → static/dist/app.css
 static/js/         app.js (toasts, menus) and board.js (drag and drop)

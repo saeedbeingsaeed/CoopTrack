@@ -240,7 +240,8 @@ def test_detail_query_count_does_not_grow_with_history(
     for stage in [Stage.APPLIED, Stage.ONLINE_ASSESSMENT, Stage.INTERVIEW, Stage.OFFER]:
         application.move_to(stage)
 
-    with django_assert_max_num_queries(4):
+    # session + user + application + history + "is there anything to undo?"
+    with django_assert_max_num_queries(5):
         signed_in.get(reverse("tracker:detail", args=[application.pk]))
 
 

@@ -2,9 +2,11 @@ import json
 
 from django.contrib import messages
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Count, F, Max, Q
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import redirect
+from django.template.response import TemplateResponse
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views import View
@@ -12,9 +14,21 @@ from django.views.generic import CreateView, DeleteView, DetailView, FormView, L
 from django.views.generic.detail import SingleObjectMixin
 
 from . import csv_io, stats
+from .domain.errors import CoopTrackError, InvalidMove, JobSearchError, NotFound
+from .domain.ranking import DEFAULT_RANKING, RANKINGS
 from .forms import ApplicationForm, ImportForm, ResumeVersionForm
-from .models import Application, ResumeVersion, Stage
+from .models import Application, ResumeVersion, Stage, Via
 from .scoping import OwnedObjectMixin
+from .services import ApplicationService
+
+
+def service_for(request):
+    return ApplicationService(request.user, via=Via.WEB)
+
+
+def refused(problem):
+    # 409 = we said no on purpose; app.js and board.js show the text and undo the change on screen.
+    return HttpResponse(str(problem), status=409, content_type="text/plain; charset=utf-8")
 
 
 def is_htmx(request):
@@ -162,7 +176,12 @@ class ApplicationCreateView(ApplicationFormMixin, CreateView):
 
 class ApplicationUpdateView(ApplicationFormMixin, OwnedObjectMixin, UpdateView):
     def form_valid(self, form):
-        response = super().form_valid(form)
+        # Changing the stage here should be undoable too, so snapshot it first.
+        before = Application.objects.get(pk=self.object.pk)
+        with transaction.atomic():
+            if before.stage != form.instance.stage:
+                before.undo_history.push(before.create_memento())
+            response = super().form_valid(form)
         messages.success(self.request, "Changes saved.")
         return response
 
@@ -176,6 +195,7 @@ class ApplicationDetailView(OwnedObjectMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(stages=Stage.choices, **kwargs)
+        context["can_undo"] = self.object.undo_history.can_undo()
         # Pair each history row with the next one, so the page can say how long the
         # application spent in each stage. The latest row is still ongoing (until=None).
         changes = list(self.object.history.all())
@@ -199,9 +219,8 @@ class ApplicationDeleteView(OwnedObjectMixin, DeleteView):
 
 class ApplicationStageView(OwnedObjectMixin, SingleObjectMixin, View):
     """
-    POST to=<stage number>. Used by the stage dropdown in the table, and by the
-    board in the next milestone. HTMX callers get 204 plus events that refresh
-    the results and show a toast; plain form posts get a redirect.
+    POST to=<stage number>, from drag and drop, the Move menus and the table dropdown.
+    HTMX gets 204 + events (refresh, toast with Undo); a refused move gets 409.
     """
 
     model = Application
@@ -213,12 +232,92 @@ class ApplicationStageView(OwnedObjectMixin, SingleObjectMixin, View):
             stage = Stage(int(request.POST.get("to", "")))
         except ValueError:
             return HttpResponseBadRequest("Unknown stage.")
-        application.move_to(stage)
+        try:
+            application, moved = service_for(request).move(application, stage)
+        except InvalidMove as problem:
+            if is_htmx(request):
+                return refused(problem)
+            messages.error(request, str(problem))
+            return redirect("tracker:detail", application.pk)
         message = f"{application.company} moved to {stage.label}."
         if not is_htmx(request):
             messages.success(request, message)
             return redirect("tracker:detail", application.pk)
+        toast = {"message": message}
+        if moved:
+            toast["undo_url"] = reverse("tracker:undo", args=[application.pk])
+        return with_events(HttpResponse(status=204), **{"applications-changed": None, "toast": toast})
+
+
+class ApplicationUndoView(OwnedObjectMixin, SingleObjectMixin, View):
+    model = Application
+    http_method_names = ["post"]
+
+    def post(self, request, *args, **kwargs):
+        application = self.get_object()
+        try:
+            application = service_for(request).undo(application)
+        except CoopTrackError as problem:
+            if is_htmx(request):
+                return refused(problem)
+            messages.error(request, str(problem))
+            return redirect("tracker:detail", application.pk)
+        message = f"Undone: {application.company} is back in {application.get_stage_display()}."
+        if not is_htmx(request):
+            messages.success(request, message)
+            return redirect("tracker:detail", application.pk)
         return with_events(HttpResponse(status=204), **{"applications-changed": None, "toast": {"message": message}})
+
+
+# --- Find jobs (Adzuna) -------------------------------------------------------------
+
+
+class JobSearchView(TemplateView):
+    template_name = "tracker/jobs.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        params = self.request.GET
+        query, where = params.get("q", "").strip(), params.get("where", "").strip()
+        rank = params.get("rank") if params.get("rank") in RANKINGS else DEFAULT_RANKING
+        context.update(query=query, where=where, rank=rank, rankings=RANKINGS.values(), searched=bool(query))
+        if query:
+            service = service_for(self.request)
+            try:
+                results = service.search_jobs(query, where, rank)
+            except JobSearchError as problem:
+                context["search_error"] = str(problem)
+            else:
+                context.update(
+                    postings=results.postings,
+                    is_sample=results.is_sample,
+                    saved_urls=service.saved_posting_urls(results.postings),
+                )
+        return context
+
+    def get_template_names(self):
+        if is_htmx(self.request):
+            return [f"{self.template_name}#results"]
+        return [self.template_name]
+
+
+class SavePostingView(View):
+    http_method_names = ["post"]
+
+    def post(self, request, posting_id):
+        try:
+            application, created = service_for(request).save_posting(posting_id)
+        except NotFound as problem:
+            if is_htmx(request):
+                return refused(problem)
+            messages.error(request, str(problem))
+            return redirect("tracker:jobs")
+        if is_htmx(request):
+            response = TemplateResponse(request, "tracker/jobs.html#saved", {"application": application})
+            message = f"Saved {application.company} to your board." if created else "Already on your board."
+            return with_events(response, toast={"message": message})
+        messages.success(request, f"Saved {application.company} to your board.")
+        return redirect("tracker:detail", application.pk)
 
 
 # --- Resume versions -------------------------------------------------------------
@@ -286,7 +385,7 @@ class StatsView(TemplateView):
 
 class ExportView(View):
     def get(self, request):
-        filename = f"offerboard-{timezone.localdate().isoformat()}.csv"
+        filename = f"cooptrack-{timezone.localdate().isoformat()}.csv"
         response = HttpResponse(content_type="text/csv; charset=utf-8")
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         response.write("\ufeff")  # byte-order mark, so Excel opens accented characters correctly

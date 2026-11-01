@@ -13,7 +13,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from .forms import ApplicationForm
-from .models import Application, Stage
+from .models import Application, Stage, Via
 
 COLUMNS = [
     ("company", "Company"),
@@ -162,7 +162,9 @@ def import_csv(user, uploaded_file):
                 skipped += 1
                 continue
             existing.add(key)
-            application = form.save()
+            application = form.save(commit=False)
+            application._change_via = Via.IMPORT
+            application.save()
             _backdate_history(application)
             imported += 1
     return imported, skipped, []

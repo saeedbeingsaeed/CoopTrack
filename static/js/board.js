@@ -6,17 +6,7 @@
 // explains why. On success the server's events refresh the board, so counts,
 // ordering and badges always match the database.
 
-function csrfToken() {
-  return JSON.parse(document.body.getAttribute("hx-headers"))["X-CSRFToken"];
-}
-
-// Fire the events named in an HX-Trigger header, the same way HTMX would.
-function fireServerEvents(header) {
-  if (!header) return;
-  for (const [name, detail] of Object.entries(JSON.parse(header))) {
-    document.body.dispatchEvent(new CustomEvent(name, { bubbles: true, detail }));
-  }
-}
+// csrfToken() and fireServerEvents() come from app.js.
 
 async function saveMove(event) {
   const card = event.item;
@@ -29,6 +19,8 @@ async function saveMove(event) {
       headers: { "X-CSRFToken": csrfToken(), "HX-Request": "true" },
       body: new URLSearchParams({ to: stage }),
     });
+    // 409 = move not allowed (e.g. backwards); the server says why.
+    if (response.status === 409) throw new Error(await response.text());
     if (!response.ok) throw new Error(response.status === 403 ? "expired" : "server");
     fireServerEvents(response.headers.get("HX-Trigger"));
   } catch (error) {
@@ -37,7 +29,9 @@ async function saveMove(event) {
     showToast(
       error.message === "expired"
         ? `Couldn't move ${card.dataset.company}: your session expired. Reload the page.`
-        : `Couldn't move ${card.dataset.company}. It's back where it was. Please try again.`,
+        : error.message === "server"
+          ? `Couldn't move ${card.dataset.company}. It's back where it was. Please try again.`
+          : error.message,
       "error",
     );
   } finally {

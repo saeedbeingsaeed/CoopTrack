@@ -2,22 +2,16 @@ from django.conf import settings
 from django.db import models, transaction
 from django.utils import timezone
 
+from .domain.stages import Stage, state_for
+from .domain.undo import StageMemento, UndoHistory
 from .scoping import OwnedQuerySet
 
 
-class Stage(models.IntegerChoices):
-    """
-    Stored as small integers in pipeline order, so "how far did this get" is a
-    plain Max() in SQL. Rejected is last but isn't progress; stats treat it
-    separately.
-    """
-
-    SAVED = 0, "Saved"
-    APPLIED = 1, "Applied"
-    ONLINE_ASSESSMENT = 2, "Online Assessment"
-    INTERVIEW = 3, "Interview"
-    OFFER = 4, "Offer"
-    REJECTED = 5, "Rejected"
+class Via(models.TextChoices):
+    # Which interface made a change; saved on every history row.
+    WEB = "web", "Website"
+    CLI = "cli", "Command line"
+    IMPORT = "import", "CSV import"
 
 
 class ResumeVersion(models.Model):
@@ -78,12 +72,9 @@ class Application(models.Model):
         """
         is_new = self._state.adding
         previous = getattr(self, "_saved_stage", None)
-        # Anything past Saved has been applied to; default the date to today so
-        # it still counts in the per-week stats.
-        if self.stage != Stage.SAVED and self.date_applied is None:
-            self.date_applied = timezone.localdate()
-            if kwargs.get("update_fields") is not None:
-                kwargs["update_fields"] = {*kwargs["update_fields"], "date_applied"}
+        self.state.before_save(self)  # e.g. past Saved, fill in the applied date
+        if kwargs.get("update_fields") is not None:
+            kwargs["update_fields"] = {*kwargs["update_fields"], "date_applied"}
         with transaction.atomic():
             super().save(*args, **kwargs)
             if is_new or self.stage != previous:
@@ -91,8 +82,11 @@ class Application(models.Model):
                     application=self,
                     from_stage=None if is_new else previous,
                     to_stage=self.stage,
+                    via=getattr(self, "_change_via", Via.WEB),
+                    is_undo=getattr(self, "_change_is_undo", False),
                 )
         self._saved_stage = self.stage
+        self._change_is_undo = False
 
     @classmethod
     def from_db(cls, *args, **kwargs):
@@ -101,13 +95,41 @@ class Application(models.Model):
         instance._saved_stage = instance.__dict__.get("stage")
         return instance
 
-    def move_to(self, stage):
-        """Change the stage, recording history. Returns False if it was already there."""
+    # State pattern: Application is the context, the stage rules live in its state object.
+
+    @property
+    def state(self):
+        return state_for(self.stage)
+
+    @property
+    def allowed_moves(self):
+        return [(stage.value, stage.label) for stage in self.state.next_stages]
+
+    def move_to(self, stage, via=Via.WEB):
+        # Use ApplicationService.move() instead; it also saves a memento for Undo.
         if self.stage == stage:
             return False
-        self.stage = stage
+        self.state.move(self, Stage(stage))
+        self._change_via = via
         self.save(update_fields=["stage", "updated_at"])
         return True
+
+    # Memento pattern: Application is the originator.
+
+    def create_memento(self):
+        return StageMemento(self.stage, self.date_applied)
+
+    def restore(self, memento, via=Via.WEB):
+        # Going back to an earlier state isn't a move, so the stage rules don't apply.
+        self.stage = memento._stage
+        self.date_applied = memento._date_applied
+        self._change_via = via
+        self._change_is_undo = True
+        self.save(update_fields=["stage", "date_applied", "updated_at"])
+
+    @property
+    def undo_history(self):
+        return UndoHistory(self)
 
 
 class StageChange(models.Model):
@@ -117,6 +139,8 @@ class StageChange(models.Model):
     from_stage = models.PositiveSmallIntegerField(choices=Stage, null=True, blank=True)  # null: just created
     to_stage = models.PositiveSmallIntegerField(choices=Stage)
     changed_at = models.DateTimeField(default=timezone.now)
+    via = models.CharField(max_length=10, choices=Via, default=Via.WEB)
+    is_undo = models.BooleanField(default=False)
 
     objects = OwnedQuerySet.as_manager()
 
@@ -127,3 +151,37 @@ class StageChange(models.Model):
     def __str__(self):
         start = self.get_from_stage_display() or "Created"
         return f"{start} → {self.get_to_stage_display()}"
+
+
+class StageSnapshot(models.Model):
+    # Where UndoHistory (the Memento caretaker) keeps its mementos.
+    owner_field = "application__user"
+
+    application = models.ForeignKey(Application, on_delete=models.CASCADE, related_name="snapshots")
+    data = models.TextField()  # serialized StageMemento
+    created_at = models.DateTimeField(default=timezone.now)
+
+    objects = OwnedQuerySet.as_manager()
+
+    class Meta:
+        indexes = [models.Index(fields=["application", "-created_at"])]
+
+    def __str__(self):
+        return f"Undo snapshot for {self.application}"
+
+
+class JobPosting(models.Model):
+    # Postings from recent searches, so "save" can find one by id. Public data, no owner.
+    id = models.CharField(primary_key=True, max_length=60)
+    title = models.CharField(max_length=300)
+    company = models.CharField(max_length=200)
+    location = models.CharField(max_length=200, blank=True)
+    salary_min = models.FloatField(null=True, blank=True)
+    salary_max = models.FloatField(null=True, blank=True)
+    created = models.DateTimeField(null=True, blank=True)
+    url = models.URLField(max_length=1000)
+    description = models.TextField(blank=True)
+    fetched_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.title} at {self.company}"

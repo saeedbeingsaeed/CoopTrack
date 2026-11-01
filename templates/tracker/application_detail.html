@@ -47,15 +47,28 @@
       <aside class="space-y-6">
         <section class="card p-5 sm:p-6" aria-labelledby="move-heading">
           <h2 id="move-heading" class="text-sm font-semibold">Move to</h2>
-          {# Works without JavaScript: a plain form post that redirects back here. #}
-          <form method="post" action="{% url 'tracker:stage' application.pk %}" class="mt-3 flex gap-2">
-            {% csrf_token %}
-            <label for="move-to" class="sr-only">New stage</label>
-            <select id="move-to" name="to">
-              {% for value, label in stages %}<option value="{{ value }}" {% if value == application.stage %}selected{% endif %}>{{ label }}</option>{% endfor %}
-            </select>
-            <button type="submit" class="btn btn-secondary">Move</button>
-          </form>
+          {% if application.allowed_moves %}
+            {# Works without JavaScript: a plain form post that redirects back here. #}
+            <form method="post" action="{% url 'tracker:stage' application.pk %}" class="mt-3 flex gap-2">
+              {% csrf_token %}
+              <label for="move-to" class="sr-only">New stage</label>
+              <select id="move-to" name="to">
+                {% for value, label in application.allowed_moves %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+              </select>
+              <button type="submit" class="btn btn-secondary">Move</button>
+            </form>
+          {% else %}
+            <p class="mt-3 text-sm text-zinc-500 dark:text-zinc-400">{{ application.get_stage_display }} is a final stage.</p>
+          {% endif %}
+          {% if can_undo %}
+            <form method="post" action="{% url 'tracker:undo' application.pk %}" class="mt-3">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-ghost w-full justify-center">
+                <svg class="size-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.79 4.21a.75.75 0 0 1 0 1.06L5.56 7.5h6.69a4.75 4.75 0 0 1 0 9.5H10a.75.75 0 0 1 0-1.5h2.25a3.25 3.25 0 0 0 0-6.5H5.56l2.23 2.23a.75.75 0 1 1-1.06 1.06l-3.5-3.5a.75.75 0 0 1 0-1.06l3.5-3.5a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd"/></svg>
+                Undo last move
+              </button>
+            </form>
+          {% endif %}
         </section>
 
         <section class="card p-5 sm:p-6" aria-labelledby="history-heading">
@@ -65,9 +78,10 @@
               <li class="stage-{{ change.to_stage }} relative flex gap-3 text-sm">
                 <span class="stage-dot mt-1.5"></span>
                 <div>
-                  <p class="font-medium">{% if change.from_stage is None %}Added as {{ change.get_to_stage_display }}{% else %}Moved to {{ change.get_to_stage_display }}{% endif %}</p>
+                  <p class="font-medium">{% if change.from_stage is None %}Added as {{ change.get_to_stage_display }}{% elif change.is_undo %}Undo: back to {{ change.get_to_stage_display }}{% else %}Moved to {{ change.get_to_stage_display }}{% endif %}</p>
                   <p class="text-xs text-zinc-500 dark:text-zinc-400">
                     <time datetime="{{ change.changed_at|date:'c' }}">{{ change.changed_at|date:"M j, Y · g:i A" }}</time>
+                    {% if change.via != "web" %}· {{ change.get_via_display }}{% endif %}
                   </p>
                   <p class="text-xs text-zinc-500 dark:text-zinc-400">
                     {% if until %}{{ change.changed_at|timesince:until }} in {{ change.get_to_stage_display }}{% else %}In {{ change.get_to_stage_display }} for {{ change.changed_at|timesince }}{% endif %}

@@ -34,7 +34,9 @@ def days(n):
 
 
 def make_stale(application, days_ago):
-    Application.objects.filter(pk=application.pk).update(updated_at=timezone.now() - datetime.timedelta(days=days_ago))
+    # Relative to TODAY (fixed), not the real clock, so the test doesn't depend on when it runs.
+    noon = timezone.make_aware(datetime.datetime.combine(TODAY, datetime.time(12)))
+    Application.objects.filter(pk=application.pk).update(updated_at=noon - datetime.timedelta(days=days_ago))
 
 
 def digest_for(user):

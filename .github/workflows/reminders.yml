@@ -7,10 +7,10 @@
 # Needs these repository secrets (Settings → Secrets and variables → Actions):
 #   DATABASE_URL   the same Supabase session pooler URI that Render uses
 #   SECRET_KEY     the same value as on Render, so unsubscribe links work there
-#   SMTP_USERNAME  the Offerboard Gmail address
+#   SMTP_USERNAME  the CoopTrack Gmail address
 #   SMTP_PASSWORD  its 16-character Gmail app password
 # and this repository variable:
-#   SITE_URL       e.g. https://offerboard.onrender.com (used for links in emails)
+#   SITE_URL       e.g. https://cooptrack.onrender.com (used for links in emails)
 
 name: Daily reminders
 

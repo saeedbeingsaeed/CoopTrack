@@ -37,12 +37,12 @@ jobs:
         image: postgres:16
         env:
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: offerboard
+          POSTGRES_DB: cooptrack
         ports: ["5432:5432"]
         options: >-
           --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
     env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/offerboard
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cooptrack
       SECRET_KEY: ci-only-not-secret
       DEBUG: "1" # the test client speaks plain HTTP; production security is checked below
     steps:
@@ -60,7 +60,7 @@ jobs:
         env:
           DEBUG: "0"
           SECRET_KEY: ci-only-a-long-random-looking-value-for-the-deploy-check-0123456789
-          ALLOWED_HOSTS: offerboard.onrender.com
+          ALLOWED_HOSTS: cooptrack.onrender.com
       - run: pytest
 
   e2e:
@@ -70,12 +70,12 @@ jobs:
         image: postgres:16
         env:
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: offerboard
+          POSTGRES_DB: cooptrack
         ports: ["5432:5432"]
         options: >-
           --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
     env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/offerboard
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cooptrack
       SECRET_KEY: ci-only-not-secret
       DEBUG: "1"
     steps:

@@ -1,5 +1,5 @@
 """
-Django settings for Offerboard.
+Django settings for CoopTrack.
 
 One settings file for every environment. Anything that differs between your
 laptop and production (secrets, debug, hosts, database) comes from environment
@@ -39,7 +39,7 @@ if not SECRET_KEY:
     SECRET_KEY = "dev-only-insecure-key"
 
 ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", "localhost,127.0.0.1")
-# Render sets this to the service's own hostname (e.g. offerboard.onrender.com).
+# Render sets this to the service's own hostname (e.g. cooptrack.onrender.com).
 if render_host := env("RENDER_EXTERNAL_HOSTNAME"):
     ALLOWED_HOSTS.append(render_host)
 CSRF_TRUSTED_ORIGINS = [f"https://{host}" for host in ALLOWED_HOSTS if host not in ("localhost", "127.0.0.1")]
@@ -179,7 +179,7 @@ if smtp_username and smtp_password:
     }
 else:
     MAILERS = {"default": {"BACKEND": "django.core.mail.backends.console.EmailBackend"}}
-DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", f"Offerboard <{smtp_username or 'noreply@offerboard.local'}>")
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", f"CoopTrack <{smtp_username or 'noreply@cooptrack.local'}>")
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
 # Full address of the site, for links in emails (there's no request to build them from).
@@ -187,6 +187,12 @@ SITE_URL = env("SITE_URL", "http://localhost:8000").rstrip("/")
 
 # Shown on the privacy page for questions and deletion requests.
 CONTACT_EMAIL = env("CONTACT_EMAIL")
+
+# --- Job search (Adzuna) ------------------------------------------------------
+# Keys from https://developer.adzuna.com. Without them, Find jobs shows sample postings.
+ADZUNA_APP_ID = env("ADZUNA_APP_ID")
+ADZUNA_APP_KEY = env("ADZUNA_APP_KEY")
+ADZUNA_COUNTRY = env("ADZUNA_COUNTRY", "ca")
 
 # --- Static files ------------------------------------------------------------
 
