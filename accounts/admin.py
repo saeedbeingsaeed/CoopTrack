@@ -12,7 +12,7 @@ class UserAdmin(BaseUserAdmin):
     search_fields = ["email", "first_name", "last_name"]
     fieldsets = [
         (None, {"fields": ["email", "password"]}),
-        ("Profile", {"fields": ["first_name", "last_name", "reminders_enabled", "is_demo"]}),
+        ("Profile", {"fields": ["first_name", "last_name", "is_demo"]}),
         ("Permissions", {"fields": ["is_active", "is_staff", "is_superuser", "groups", "user_permissions"]}),
         ("Dates", {"fields": ["last_login", "date_joined"]}),
     ]
@@ -24,7 +24,6 @@ class DeletedAccountAdmin(admin.ModelAdmin):
     list_display = ["deleted_at", "joined_at", "application_count", "signed_up_with"]
     list_filter = ["signed_up_with"]
 
-    # A record of what happened: it can be looked at, not edited.
     def has_add_permission(self, request):
         return False
 

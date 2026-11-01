@@ -12,7 +12,7 @@
   <script src="{% static 'js/app.js' %}" defer></script>
   {% block extra_head %}{% endblock %}
 </head>
-{# hx-headers sends the CSRF token with every HTMX request, so HTMX POSTs are protected like normal forms. #}
+{# CSRF token for HTMX requests. #}
 <body class="flex min-h-full flex-col" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
   <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 btn btn-primary">Skip to content</a>
   <div id="page-progress" class="fixed inset-x-0 top-0 z-50 h-0.5 bg-brand-500" aria-hidden="true"></div>
@@ -25,7 +25,6 @@
     </main>
   {% endblock %}
 
-  {# Outside the body block, so every page has it: app pages, sign-in pages and the landing page. #}
   <footer class="border-t border-zinc-200/70 py-5 text-center text-xs text-zinc-500 dark:border-zinc-800/70 dark:text-zinc-400">
     <a href="{% url 'privacy' %}" class="text-zinc-500 dark:text-zinc-400">Privacy</a>
   </footer>

@@ -32,7 +32,7 @@ def cli(user, *args):
     return out.getvalue()
 
 
-# --- State --------------------------------------------------------------------------
+# State
 
 
 def test_applications_only_move_forward(user, make_application):
@@ -64,7 +64,7 @@ def test_past_saved_fills_in_the_applied_date(user, make_application):
     assert make_application(user, company="Saved").date_applied is None
 
 
-# --- Memento --------------------------------------------------------------------------
+# Memento
 
 
 def test_undo_reverses_moves_one_at_a_time(user, make_application):
@@ -103,7 +103,7 @@ def test_undo_history_keeps_the_last_ten(user, make_application):
     assert StageSnapshot.objects.filter(application=app).count() == 10
 
 
-# --- Traceability ---------------------------------------------------------------------------
+# Traceability
 
 
 def test_history_records_the_interface_and_undos(user, make_application):
@@ -119,7 +119,7 @@ def test_history_records_the_interface_and_undos(user, make_application):
     ]
 
 
-# --- Strategy -----------------------------------------------------------------------------
+# Strategy
 
 
 def posting(pid, title, salary=None, days_old=0, description=""):
@@ -149,7 +149,7 @@ def test_strategies_never_drop_postings():
         assert sorted(p.id for p in strategy.rank(POSTINGS, "x")) == ["a", "b", "c"]
 
 
-# --- Job search and saving postings -----------------------------------------------------------
+# Job search and saving postings
 
 
 class FakeJobSource(JobSource):
@@ -231,7 +231,7 @@ def test_adzuna_result_parsing():
     assert to_posting({"id": 1}).created is None
 
 
-# --- Website ----------------------------------------------------------------------------------
+# Website
 
 
 def test_refused_move_returns_409_with_the_reason(signed_in, user, make_application):
@@ -273,7 +273,7 @@ def test_stage_change_through_the_edit_form_can_be_undone(signed_in, user, make_
     assert ApplicationService(user).undo(app).stage == Stage.APPLIED
 
 
-# --- Command line ---------------------------------------------------------------------------
+# Command line
 
 
 def test_cli_and_website_share_the_same_logic_and_data(signed_in, user, make_application):

@@ -3,8 +3,6 @@ from django.db import models
 
 
 class UserManager(BaseUserManager):
-    """Creates users identified by email, since there is no username."""
-
     use_in_migrations = True
 
     def _create_user(self, email, password, **extra_fields):
@@ -29,12 +27,6 @@ class UserManager(BaseUserManager):
 class User(AbstractUser):
     username = None
     email = models.EmailField("email address", unique=True)
-    reminders_enabled = models.BooleanField(
-        default=True, help_text="Send the daily email about deadlines and stale applications."
-    )
-    last_reminder_sent_on = models.DateField(
-        null=True, blank=True, help_text="Stops the daily job from emailing someone twice on the same day."
-    )
     is_demo = models.BooleanField(default=False, help_text="Throwaway account created by the 'Try the demo' button.")
 
     USERNAME_FIELD = "email"
@@ -47,11 +39,7 @@ class User(AbstractUser):
 
 
 class DeletedAccount(models.Model):
-    """
-    An anonymous note that someone deleted their account, so deletions can be
-    counted. Deliberately stores nothing that identifies the person: no email,
-    no name, no applications.
-    """
+    # Lets the admin count deletions without keeping anything about the person.
 
     deleted_at = models.DateTimeField(auto_now_add=True)
     joined_at = models.DateTimeField()

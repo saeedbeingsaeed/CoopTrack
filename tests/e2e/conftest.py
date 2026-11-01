@@ -2,9 +2,7 @@ import os
 
 import pytest
 
-# Playwright's sync API keeps an asyncio event loop running in the test thread,
-# which makes Django refuse database calls from that thread. The tests only use
-# the database to check results, so allowing it here is safe.
+# Playwright's sync API runs an event loop, so Django would block DB calls. We only read results.
 os.environ.setdefault("DJANGO_ALLOW_ASYNC_UNSAFE", "true")
 
 

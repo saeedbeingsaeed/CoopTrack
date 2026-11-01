@@ -1,43 +1,11 @@
 {% extends "base.html" %}
-{% load socialaccount %}
 {% block head_title %}Settings{% endblock %}
 {% block content %}
   <div class="mx-auto max-w-2xl">
     <h1 class="text-2xl font-semibold tracking-tight">Settings</h1>
     <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Signed in as {{ user.email }}.</p>
 
-    <section class="card mt-6 p-5 sm:p-6" aria-labelledby="reminders-heading">
-      <h2 id="reminders-heading" class="text-base font-semibold">Email reminders</h2>
-      <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-        One email each morning, only on days there's something to act on: deadlines in the next 3 days,
-        and applications with no update in 2 weeks.
-      </p>
-      {# Saves as soon as the box changes. Without JavaScript, the Save button does the same. #}
-      <form method="post" class="mt-5 flex flex-wrap items-center justify-between gap-4"
-            hx-post="{% url 'settings' %}" hx-trigger="change" hx-swap="none">
-        {% csrf_token %}
-        <label class="flex items-center gap-3 text-sm font-medium">
-          {{ form.reminders_enabled }} {{ form.reminders_enabled.label }}
-        </label>
-        <noscript><button type="submit" class="btn btn-primary">Save</button></noscript>
-      </form>
-      {% if not email_verified and not user.is_demo %}
-        {# Reminders only go to verified addresses, so nobody can sign up as someone else and spam them. #}
-        <div class="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100" role="status">
-          <p class="font-semibold">Reminders aren't being sent yet</p>
-          <p class="mt-1">Your email address hasn't been verified, and CoopTrack only emails verified addresses.
-            {% if google_enabled %}Sign in with Google once using <strong>{{ user.email }}</strong> to verify it.{% endif %}</p>
-          {% if google_enabled %}
-            <a href="{% provider_login_url 'google' process='connect' next=request.path %}" class="btn btn-secondary mt-3">Verify with Google</a>
-          {% endif %}
-        </div>
-      {% endif %}
-      <p class="mt-5 border-t border-zinc-100 pt-4 text-sm dark:border-zinc-800">
-        <a href="{% url 'reminder_preview' %}" target="_blank" rel="noopener">Preview today's email ↗</a>
-      </p>
-    </section>
-
-    <section class="card mt-4 p-5 sm:p-6" aria-labelledby="account-heading">
+    <section class="card mt-6 p-5 sm:p-6" aria-labelledby="account-heading">
       <h2 id="account-heading" class="text-base font-semibold">Account</h2>
       <ul class="mt-3 space-y-2 text-sm">
         <li><a href="{% url 'account_change_password' %}">Change password</a></li>

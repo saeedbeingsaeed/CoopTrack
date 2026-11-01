@@ -1,11 +1,5 @@
-"""
-Demo mode: "Try the demo" creates a throwaway user filled with sample data.
-
-Every visitor gets their own demo user, so nothing they do is seen by anyone
-else, and the normal per-user scoping keeps demo data and real data apart
-exactly as it keeps two real users apart. Demo users are deleted when they sign
-out, and any left over are deleted by the daily job after DEMO_LIFETIME.
-"""
+# "Try the demo" makes a throwaway user with sample data. Each visitor gets their
+# own, and it's deleted when they sign out. `manage.py purge_demo_users` clears old ones.
 
 import datetime
 import secrets
@@ -17,9 +11,7 @@ from django.utils import timezone
 from tracker.models import Application, ResumeVersion, Stage, StageChange
 
 DEMO_LIFETIME = datetime.timedelta(hours=24)
-# At most this many new demos per hour across the whole site. Each demo is ~60
-# rows, so even a script hammering the button can add at most a few MB a day
-# (and demos are purged after 24 hours), far below Supabase's free 500 MB.
+# Site-wide cap so nobody can fill the free database by spamming the button.
 DEMOS_PER_HOUR = 30
 SV, AP, OA, IV, OF, RJ = (
     Stage.SAVED,
@@ -30,8 +22,7 @@ SV, AP, OA, IV, OF, RJ = (
     Stage.REJECTED,
 )
 
-# (company, role, location, pay, resume, deadline in days from today or None,
-#  history as (stage, days ago) oldest first, notes)
+# (company, role, location, pay, resume, deadline in days or None, [(stage, days ago)], notes)
 SAMPLE = [
     ("Shopify", "Backend Developer Intern", "Toronto, ON · Remote", "$32/hr", "SWE v3", 3,
      [(SV, 40), (AP, 38), (OA, 30), (IV, 9)], "Referred by Priya (4A CS). Round 2 is pair programming."),
@@ -74,16 +65,14 @@ SAMPLE = [
 
 @transaction.atomic
 def create_demo_user():
-    """A fresh demo user with sample data, in a handful of queries whatever the sample size."""
     now = timezone.now()
     today = timezone.localdate()
     user = get_user_model().objects.create_user(
-        # .invalid is a reserved top-level domain: these addresses can never receive email.
+        # .invalid can never receive email
         email=f"demo-{secrets.token_hex(6)}@demo.invalid",
-        password=None,  # unusable password: the only way in is the demo button
+        password=None,
         first_name="Demo",
         is_demo=True,
-        reminders_enabled=False,
     )
     resumes = {name: ResumeVersion.objects.create(user=user, name=name) for name in ("SWE v2", "SWE v3", "Data v1")}
 
@@ -107,8 +96,7 @@ def create_demo_user():
         )
         histories.append(history)
 
-    # bulk_create skips Application.save(), so the history rows are written here
-    # explicitly, with the backdated times the sample describes.
+    # bulk_create skips save(), so write the history ourselves with the backdated times.
     Application.objects.bulk_create(applications)
     changes = []
     for application, history in zip(applications, histories, strict=True):
@@ -124,8 +112,7 @@ def create_demo_user():
             )
             previous = stage
     StageChange.objects.bulk_create(changes)
-    # Date each application's last update to its latest change, so "no update in
-    # 2 weeks" looks real. bulk_update writes these values as given (auto_now doesn't apply).
+    # Make updated_at match the last change so the sample looks realistic.
     for application, history in zip(applications, histories, strict=True):
         application.updated_at = now - datetime.timedelta(days=history[-1][1], hours=3)
     Application.objects.bulk_update(applications, ["updated_at"])
@@ -133,17 +120,11 @@ def create_demo_user():
 
 
 def too_many_recent_demos(now=None):
-    """
-    A site-wide limit, counted from the database. Unlike a per-IP limit, it
-    can't be dodged by faking addresses, and it works across all server
-    processes without a shared cache.
-    """
     since = (now or timezone.now()) - datetime.timedelta(hours=1)
     return get_user_model().objects.filter(is_demo=True, date_joined__gte=since).count() >= DEMOS_PER_HOUR
 
 
 def purge_expired(now=None):
-    """Delete demo users older than DEMO_LIFETIME. Returns how many were deleted."""
     cutoff = (now or timezone.now()) - DEMO_LIFETIME
     deleted, per_model = get_user_model().objects.filter(is_demo=True, date_joined__lt=cutoff).delete()
     return per_model.get(get_user_model()._meta.label, 0)

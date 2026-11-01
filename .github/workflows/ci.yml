@@ -8,7 +8,6 @@ on:
 permissions:
   contents: read
 
-# A newer push to the same branch cancels the older run.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -44,7 +43,7 @@ jobs:
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cooptrack
       SECRET_KEY: ci-only-not-secret
-      DEBUG: "1" # the test client speaks plain HTTP; production security is checked below
+      DEBUG: "1"
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -60,7 +59,7 @@ jobs:
         env:
           DEBUG: "0"
           SECRET_KEY: ci-only-a-long-random-looking-value-for-the-deploy-check-0123456789
-          ALLOWED_HOSTS: cooptrack.onrender.com
+          ALLOWED_HOSTS: cooptrack.example.com
       - run: pytest
 
   e2e:

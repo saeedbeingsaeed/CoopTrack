@@ -1,5 +1,4 @@
 {% load tracker_tags %}
-{# One card. The company link stretches over the whole card (after:inset-0), so tapping anywhere opens it. #}
 <li id="card-{{ application.pk }}" class="board-card group relative cursor-grab rounded-lg border border-l-4 border-zinc-200 border-l-(--stage) bg-white p-3 shadow-xs transition-shadow hover:shadow-md active:cursor-grabbing dark:border-zinc-800 dark:border-l-(--stage) dark:bg-zinc-900"
     data-move-url="{% url 'tracker:stage' application.pk %}" data-company="{{ application.company }}">
   <a href="{% url 'tracker:detail' application.pk %}" class="block truncate pr-7 text-sm font-semibold text-zinc-900 no-underline after:absolute after:inset-0 after:rounded-lg hover:no-underline dark:text-zinc-100" draggable="false">{{ application.company }}</a>
@@ -13,7 +12,6 @@
     </div>
   {% endif %}
 
-  {# Move menu: the keyboard and touch alternative to dragging. A plain form, so it also works without JavaScript. #}
   <details class="move-menu absolute top-1.5 right-1.5 z-10">
     <summary id="move-{{ application.pk }}" class="grid size-7 cursor-pointer list-none place-items-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 [&::-webkit-details-marker]:hidden"
              aria-label="Move {{ application.company }}">

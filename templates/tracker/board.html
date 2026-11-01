@@ -21,7 +21,6 @@
     {% include "partials/empty_state.html" with title="Your board is empty" body="Add the first job you're interested in and it shows up here, ready to drag from Saved to Offer." action_url=create_url action_label="Add your first application" %}
   {% else %}
     {% partialdef board inline %}
-      {# Refreshes itself after any move, so counts, order and badges always match the database. #}
       <div id="board" class="-mx-4 mt-6 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-4 transition-opacity sm:mx-0 sm:px-0 xl:grid xl:grid-cols-6 xl:overflow-visible [&.htmx-request]:opacity-60"
            hx-get="{% url 'tracker:board' %}" hx-trigger="applications-changed from:body" hx-swap="outerHTML">
         {% for stage, applications in columns %}

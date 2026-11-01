@@ -7,7 +7,6 @@ from django.utils import timezone
 
 from accounts import demo
 from accounts.models import User
-from tracker import reminders
 from tracker.models import Application, ResumeVersion, Stage, StageChange
 
 pytestmark = pytest.mark.django_db
@@ -104,11 +103,6 @@ def test_purge_deletes_only_expired_demo_users(user, make_application):
 
     assert set(User.objects.values_list("pk", flat=True)) == {user.pk, new_demo.pk}
     assert Application.objects.filter(user=user).count() == 1
-
-
-def test_demo_users_get_no_reminder_emails():
-    demo_user = demo.create_demo_user()
-    assert demo_user not in reminders.recipients(timezone.localdate())
 
 
 def test_creating_a_demo_takes_a_fixed_number_of_queries(django_assert_max_num_queries):

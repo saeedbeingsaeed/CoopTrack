@@ -1,16 +1,13 @@
 @import "tailwindcss";
 
-/* Where Tailwind looks for class names. */
 @source "../templates";
 @source "../static/js";
 
-/* Dark mode follows the operating system. */
 @custom-variant dark (@media (prefers-color-scheme: dark));
 
 @theme {
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 
-  /* Brand: a deep green, because the goal is the Offer column. */
   --color-brand-50: oklch(97.9% 0.021 166.113);
   --color-brand-100: oklch(95% 0.052 163.051);
   --color-brand-200: oklch(90.5% 0.093 164.15);
@@ -37,7 +34,6 @@
     @apply outline-2 outline-offset-2 outline-brand-500;
   }
 
-  /* Every form field in the app gets the same look, including allauth's. */
   input:where([type="text"], [type="email"], [type="password"], [type="url"], [type="date"], [type="number"], [type="search"]),
   select,
   textarea {
@@ -93,7 +89,7 @@
     @apply mt-1 text-sm text-rose-600 dark:text-rose-400;
   }
 
-  /* One colour per stage, used for badges, column headers and chart bars. */
+  /* Stage colours */
   .stage-0 { --stage: var(--color-zinc-500); }
   .stage-1 { --stage: var(--color-sky-500); }
   .stage-2 { --stage: var(--color-violet-500); }
@@ -110,7 +106,7 @@
   }
 }
 
-/* Thin progress bar at the top of the page while an HTMX request runs. */
+/* Progress bar while an HTMX request runs */
 #page-progress {
   transform: scaleX(0);
   transform-origin: left;
@@ -133,11 +129,9 @@
 
 /* Board ---------------------------------------------------------------------- */
 
-/* "Drop here" only shows in a column with no cards. */
 .board-list:has(.board-card) .board-empty {
   display: none;
 }
-/* Highlight every column as a drop target while dragging. */
 body.is-dragging .board-list {
   @apply border-dashed border-zinc-300 dark:border-zinc-700;
 }

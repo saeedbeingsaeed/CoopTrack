@@ -1,12 +1,6 @@
-// Board: drag and drop between stages with SortableJS.
-//
-// A drop moves the card on screen immediately, then saves in the background
-// by POSTing to the same /stage/ endpoint the Move menu uses. If the save
-// fails, the card goes back exactly where it came from and an error toast
-// explains why. On success the server's events refresh the board, so counts,
-// ordering and badges always match the database.
-
-// csrfToken() and fireServerEvents() come from app.js.
+// Drag and drop with SortableJS. The card moves right away and saves in the
+// background; if the save fails it goes back and a toast says why.
+// csrfToken() and fireServerEvents() are in app.js.
 
 async function saveMove(event) {
   const card = event.item;
@@ -19,12 +13,10 @@ async function saveMove(event) {
       headers: { "X-CSRFToken": csrfToken(), "HX-Request": "true" },
       body: new URLSearchParams({ to: stage }),
     });
-    // 409 = move not allowed (e.g. backwards); the server says why.
     if (response.status === 409) throw new Error(await response.text());
     if (!response.ok) throw new Error(response.status === 403 ? "expired" : "server");
     fireServerEvents(response.headers.get("HX-Trigger"));
   } catch (error) {
-    // Put the card back where it was, in the same position.
     event.from.insertBefore(card, card.originalNextSibling);
     showToast(
       error.message === "expired"
@@ -45,11 +37,11 @@ function initBoard(root) {
     if (Sortable.get(list)) return;
     Sortable.create(list, {
       group: "board",
-      sort: false, // cards are ordered by deadline; dragging only changes the stage
+      sort: false, // cards are sorted by deadline
       draggable: ".board-card",
-      filter: ".move-menu", // the ⋯ menu is for clicking, not dragging
+      filter: ".move-menu",
       preventOnFilter: false,
-      delay: 180, // on touch screens, a short hold starts a drag so swiping still scrolls
+      delay: 180, // hold to drag on touch screens, so swiping still scrolls
       delayOnTouchOnly: true,
       animation: 150,
       ghostClass: "board-ghost",
@@ -59,13 +51,12 @@ function initBoard(root) {
         document.body.classList.add("is-dragging");
       },
       onEnd: () => document.body.classList.remove("is-dragging"),
-      onAdd: saveMove, // fires on the list the card was dropped into
+      onAdd: saveMove,
     });
   });
 }
 
-// Keyboard users move cards with the ⋯ menu. The board then refreshes, so put
-// focus back on the moved card's menu button instead of losing it.
+// After moving with the ⋯ menu the board reloads, so put focus back on that card's menu.
 let focusAfterRefresh = null;
 document.addEventListener("htmx:beforeRequest", (event) => {
   const form = event.detail.elt.closest?.("[data-move-form]");

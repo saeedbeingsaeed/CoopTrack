@@ -48,7 +48,6 @@
         <section class="card p-5 sm:p-6" aria-labelledby="move-heading">
           <h2 id="move-heading" class="text-sm font-semibold">Move to</h2>
           {% if application.allowed_moves %}
-            {# Works without JavaScript: a plain form post that redirects back here. #}
             <form method="post" action="{% url 'tracker:stage' application.pk %}" class="mt-3 flex gap-2">
               {% csrf_token %}
               <label for="move-to" class="sr-only">New stage</label>

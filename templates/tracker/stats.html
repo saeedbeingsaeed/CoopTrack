@@ -10,7 +10,6 @@
     {% url 'tracker:board' as board_url %}
     {% include "partials/empty_state.html" with title="No stats yet" body="Stats appear once you've moved an application to Applied or beyond. Saved jobs don't count until you apply." action_url=board_url action_label="Go to your board" %}
   {% else %}
-    {# Headline numbers. One hero figure (response rate); the rest are plain tiles. #}
     <div class="mt-6 grid gap-4 lg:grid-cols-4">
       <section class="card p-6 lg:col-span-1 lg:row-span-1" aria-labelledby="rate-label">
         <h2 id="rate-label" class="text-sm text-zinc-600 dark:text-zinc-400">Response rate</h2>
@@ -25,7 +24,6 @@
     </div>
 
     <div class="mt-4 grid gap-4 lg:grid-cols-2">
-      {# Applications per week: a single series, so no legend; the title says what it is. #}
       <section class="card min-w-0 p-5 sm:p-6 lg:col-span-2" aria-labelledby="weekly-heading">
         <div class="flex flex-wrap items-baseline justify-between gap-2">
           <h2 id="weekly-heading" class="text-sm font-semibold">Applications per week</h2>
@@ -39,7 +37,6 @@
                 <div class="w-full max-w-6 rounded-t bg-brand-600 transition-colors group-hover:bg-brand-700 dark:bg-brand-500 dark:group-hover:bg-brand-400"
                      style="height: {% widthratio week.count week_max 100 %}%"></div>
               {% endif %}
-              {# Hover tooltip; the "Show as a table" view below carries the same numbers for keyboards and screen readers. #}
               <div class="pointer-events-none absolute bottom-full z-10 mb-1 hidden rounded-md bg-zinc-900 px-2 py-1 text-xs whitespace-nowrap text-white shadow group-hover:block dark:bg-white dark:text-zinc-900">
                 Week of {{ week.week|date:"M j" }}: {{ week.count }}
               </div>
@@ -62,7 +59,6 @@
         </details>
       </section>
 
-      {# How far applications get. Bars are a share of everything applied to. #}
       <section class="card p-5 sm:p-6" aria-labelledby="funnel-heading">
         <h2 id="funnel-heading" class="text-sm font-semibold">How far applications get</h2>
         <p class="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Share of your {{ summary.applied }} applications that reached each stage, even if they were rejected later.</p>
@@ -82,7 +78,6 @@
         <p class="mt-5 text-xs text-zinc-500 dark:text-zinc-400">{{ summary.rejected }} currently rejected.</p>
       </section>
 
-      {# Response rate per resume version. #}
       <section class="card p-5 sm:p-6" aria-labelledby="resume-heading">
         <h2 id="resume-heading" class="text-sm font-semibold">Response rate by resume version</h2>
         <p class="mt-1 text-xs text-zinc-500 dark:text-zinc-400">A response is an assessment, interview, offer or rejection.</p>

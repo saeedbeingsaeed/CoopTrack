@@ -18,7 +18,7 @@ def signed_in(client, user):
     return client
 
 
-# --- Create / edit / delete ---------------------------------------------------------
+# Create / edit / delete
 
 
 def test_add_an_application(signed_in, user):
@@ -106,7 +106,7 @@ def test_detail_shows_history(signed_in, user, make_application):
     assert "Moved to Applied" in content
 
 
-# --- Stage endpoint -------------------------------------------------------------------
+# Stage endpoint
 
 
 def test_move_with_htmx_returns_events(signed_in, user, make_application):
@@ -146,7 +146,7 @@ def test_move_only_accepts_post(signed_in, user, make_application):
     assert signed_in.get(reverse("tracker:stage", args=[application.pk])).status_code == 405
 
 
-# --- Table: search, filter, sort, pages -------------------------------------------------
+# Table: search, filter, sort, pages
 
 
 @pytest.fixture
@@ -220,7 +220,7 @@ def test_pages_out_of_range_show_the_last_page(signed_in, user, make_application
     assert response.context["page_obj"].number == 2
 
 
-# --- Query counts (N+1) ---------------------------------------------------------------
+# Query counts (N+1)
 
 
 def test_table_query_count_does_not_grow_with_rows(signed_in, user, make_application, django_assert_max_num_queries):
@@ -245,7 +245,7 @@ def test_detail_query_count_does_not_grow_with_history(
         signed_in.get(reverse("tracker:detail", args=[application.pk]))
 
 
-# --- CSRF -------------------------------------------------------------------------------
+# CSRF
 
 
 def test_htmx_posts_need_the_csrf_token(user, make_application):
@@ -267,7 +267,7 @@ def test_pages_include_the_csrf_header_for_htmx(signed_in):
     assert 'hx-headers=\'{"X-CSRFToken":' in content
 
 
-# --- Resume versions --------------------------------------------------------------------
+# Resume versions
 
 
 def test_add_and_delete_a_resume_version(signed_in, user, make_application):

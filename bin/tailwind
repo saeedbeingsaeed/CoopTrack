@@ -1,9 +1,5 @@
 #!/usr/bin/env bash
-# Runs the Tailwind standalone CLI, downloading it first if needed.
-# It's a single binary, so the project needs no Node.js or npm.
-#
-#   bin/tailwind -i assets/app.css -o static/dist/app.css --watch   # while developing
-#   bin/tailwind -i assets/app.css -o static/dist/app.css --minify  # production build
+# Downloads the Tailwind binary the first time, then runs it (no Node needed).
 set -o errexit -o nounset -o pipefail
 
 VERSION="v4.3.3"

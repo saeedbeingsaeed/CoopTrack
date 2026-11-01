@@ -27,7 +27,7 @@ def service_for(request):
 
 
 def refused(problem):
-    # 409 = we said no on purpose; app.js and board.js show the text and undo the change on screen.
+    # 409 means "not allowed"; the JS shows this text and puts the card back.
     return HttpResponse(str(problem), status=409, content_type="text/plain; charset=utf-8")
 
 
@@ -36,12 +36,12 @@ def is_htmx(request):
 
 
 def with_events(response, **events):
-    """Fire client-side events after an HTMX request (handled in static/js/app.js)."""
+    # Picked up by app.js after an HTMX request.
     response["HX-Trigger"] = json.dumps(events)
     return response
 
 
-# --- Board view ----------------------------------------------------------------
+# Board view
 
 
 class BoardView(OwnedObjectMixin, ListView):
@@ -49,8 +49,7 @@ class BoardView(OwnedObjectMixin, ListView):
     template_name = "tracker/board.html"
 
     def get_queryset(self):
-        # stage_since: when the card last entered its current stage, from its history.
-        # The database works it out in the same single query (no query per card).
+        # stage_since = when the card entered its current stage, worked out in the same query.
         return (
             super()
             .get_queryset()
@@ -68,16 +67,15 @@ class BoardView(OwnedObjectMixin, ListView):
         return context
 
     def get_template_names(self):
-        # After a move, the board refreshes itself with an HTMX request for just the board.
+        # HTMX refreshes only the board part after a move.
         if is_htmx(self.request):
             return [f"{self.template_name}#board"]
         return [self.template_name]
 
 
-# --- Table view ----------------------------------------------------------------
+# Table view
 
-# Allowed ?sort= values and the ordering each one means. Anything else falls back
-# to the default, so the query string can't order by arbitrary fields.
+# Only these ?sort= values are allowed; anything else uses the default.
 SORTS = {
     "company": [F("company").asc(), F("role").asc()],
     "role": [F("role").asc(), F("company").asc()],
@@ -110,17 +108,13 @@ class ApplicationListView(OwnedObjectMixin, ListView):
                 | Q(location__icontains=self.query)
                 | Q(notes__icontains=self.query)
             )
-        # The stage chips show counts for the current search but ignore the stage
-        # filter, so each chip says how many rows clicking it would give.
+        # Chip counts ignore the stage filter so each chip shows what you'd get by clicking it.
         self.searched = queryset
         if self.stage:
             queryset = queryset.filter(stage=int(self.stage))
-        # select_related: each row shows its resume name, which would otherwise
-        # cost one extra query per row (the N+1 problem).
         return queryset.select_related("resume_version").order_by(*SORTS[self.sort], "-id")
 
     def paginate_queryset(self, queryset, page_size):
-        # get_page() turns a bad or out-of-range ?page= into a valid page instead of a 404.
         paginator = Paginator(queryset, page_size)
         page = paginator.get_page(self.request.GET.get("page"))
         return paginator, page, page.object_list, page.has_other_pages()
@@ -141,13 +135,12 @@ class ApplicationListView(OwnedObjectMixin, ListView):
         return context
 
     def get_template_names(self):
-        # HTMX filter/sort/page requests only need the results, not the whole page.
         if is_htmx(self.request):
             return [f"{self.template_name}#results"]
         return [self.template_name]
 
 
-# --- Create, read, update, delete -----------------------------------------------
+# Create, read, update, delete
 
 
 class ApplicationFormMixin:
@@ -164,7 +157,7 @@ class ApplicationFormMixin:
 
 class ApplicationCreateView(ApplicationFormMixin, CreateView):
     def get_initial(self):
-        # Links like "Add to Applied" pass ?stage=1 to preselect the stage.
+        # "Add to Applied" links pass ?stage=1.
         stage = self.request.GET.get("stage", "")
         return {"stage": int(stage)} if stage.isdigit() and int(stage) in Stage.values else {}
 
@@ -196,8 +189,7 @@ class ApplicationDetailView(OwnedObjectMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(stages=Stage.choices, **kwargs)
         context["can_undo"] = self.object.undo_history.can_undo()
-        # Pair each history row with the next one, so the page can say how long the
-        # application spent in each stage. The latest row is still ongoing (until=None).
+        # Pair each change with the next one to show time spent in each stage.
         changes = list(self.object.history.all())
         context["timeline"] = [
             (change, changes[i + 1].changed_at if i + 1 < len(changes) else None) for i, change in enumerate(changes)
@@ -227,7 +219,7 @@ class ApplicationStageView(OwnedObjectMixin, SingleObjectMixin, View):
     http_method_names = ["post"]
 
     def post(self, request, *args, **kwargs):
-        application = self.get_object()  # 404 if it isn't this user's
+        application = self.get_object()
         try:
             stage = Stage(int(request.POST.get("to", "")))
         except ValueError:
@@ -269,7 +261,7 @@ class ApplicationUndoView(OwnedObjectMixin, SingleObjectMixin, View):
         return with_events(HttpResponse(status=204), **{"applications-changed": None, "toast": {"message": message}})
 
 
-# --- Find jobs (Adzuna) -------------------------------------------------------------
+# Find jobs (Adzuna)
 
 
 class JobSearchView(TemplateView):
@@ -320,12 +312,10 @@ class SavePostingView(View):
         return redirect("tracker:detail", application.pk)
 
 
-# --- Resume versions -------------------------------------------------------------
+# Resume versions
 
 
 class ResumeVersionListView(OwnedObjectMixin, ListView):
-    """Lists resume versions and handles the "add" form on the same page."""
-
     model = ResumeVersion
     template_name = "tracker/resume_list.html"
 
@@ -359,7 +349,7 @@ class ResumeVersionDeleteView(OwnedObjectMixin, DeleteView):
         return response
 
 
-# --- Stats -----------------------------------------------------------------------
+# Stats
 
 
 class StatsView(TemplateView):
@@ -380,7 +370,7 @@ class StatsView(TemplateView):
         return context
 
 
-# --- CSV ---------------------------------------------------------------------------
+# CSV
 
 
 class ExportView(View):
@@ -388,7 +378,7 @@ class ExportView(View):
         filename = f"cooptrack-{timezone.localdate().isoformat()}.csv"
         response = HttpResponse(content_type="text/csv; charset=utf-8")
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
-        response.write("\ufeff")  # byte-order mark, so Excel opens accented characters correctly
+        response.write("\ufeff")  # so Excel reads accents correctly
         csv_io.write_csv(request.user, response)
         return response
 

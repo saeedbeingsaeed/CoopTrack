@@ -43,13 +43,7 @@ def test_google_button_hidden_until_configured(client, settings):
     assert b"Continue with Google" not in client.get(reverse("account_login")).content
 
 
-def test_health_check_skips_auth_and_database(client, django_assert_num_queries):
-    with django_assert_num_queries(0):
-        assert client.get(reverse("healthz")).content == b"ok"
-
-
 def _app_urls(resolver=None, prefix=""):
-    """Yield every named URL in the tracker app."""
     for entry in (resolver or get_resolver()).url_patterns:
         if isinstance(entry, URLResolver):
             yield from _app_urls(entry, prefix + (f"{entry.namespace}:" if entry.namespace else ""))
@@ -58,7 +52,6 @@ def _app_urls(resolver=None, prefix=""):
 
 
 def test_every_app_page_requires_sign_in(client):
-    """Guards future pages too: any new tracker URL without kwargs is checked automatically."""
     names = list(_app_urls())
     assert names
     for name in names:

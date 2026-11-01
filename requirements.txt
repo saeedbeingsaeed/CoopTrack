@@ -1,4 +1,3 @@
-# Runtime dependencies (what Render installs). Pinned so every deploy is identical.
 Django==6.1.2
 django-allauth[socialaccount]==65.19.7
 psycopg[binary]==3.3.6

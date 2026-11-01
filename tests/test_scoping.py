@@ -1,5 +1,3 @@
-"""Every user-owned model is reachable only through for_user()."""
-
 import pytest
 from django.contrib.auth.models import AnonymousUser
 

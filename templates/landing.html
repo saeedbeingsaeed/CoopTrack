@@ -14,11 +14,11 @@
           Every application, <span class="text-brand-600 dark:text-brand-400">one board.</span>
         </h1>
         <p class="mt-5 max-w-xl text-lg text-pretty text-zinc-600 dark:text-zinc-400">
-          Stop losing track in a spreadsheet. Move each job from Applied to Offer, never miss a deadline,
+          Stop losing track in a spreadsheet. Move each job from Applied to Offer, keep every deadline in view,
           and see what's actually working in your search.
         </p>
         <div class="mt-8 flex flex-wrap items-center gap-3">
-          {# A POST, not a link: it creates a demo account, and links can be prefetched by browsers and bots. #}
+          {# POST, so browsers prefetching links can't create demo accounts. #}
           <form method="post" action="{% url 'demo' %}" data-demo-form>
             {% csrf_token %}
             <button type="submit" class="btn btn-primary px-5 py-2.5 text-base" data-loading-text="Setting up your demo…">
@@ -35,8 +35,8 @@
             <dd class="mt-1 text-zinc-600 dark:text-zinc-400">Drag each job from Saved to Offer. Every move is kept as history.</dd>
           </div>
           <div>
-            <dt class="font-semibold text-zinc-900 dark:text-zinc-100">Never miss a deadline</dt>
-            <dd class="mt-1 text-zinc-600 dark:text-zinc-400">A morning email lists what's due soon and what's gone quiet.</dd>
+            <dt class="font-semibold text-zinc-900 dark:text-zinc-100">Find postings</dt>
+            <dd class="mt-1 text-zinc-600 dark:text-zinc-400">Search live co-op and internship jobs and save them to your board.</dd>
           </div>
           <div>
             <dt class="font-semibold text-zinc-900 dark:text-zinc-100">See what's working</dt>
@@ -45,7 +45,6 @@
         </dl>
       </div>
 
-      {# A static picture of the board, built from the same styles as the real one. #}
       <div class="hidden lg:block" aria-hidden="true">
         <div class="card grid -rotate-1 grid-cols-3 gap-3 bg-zinc-50/80 p-4 shadow-xl dark:bg-zinc-900/80">
           <div class="stage-1 space-y-2">

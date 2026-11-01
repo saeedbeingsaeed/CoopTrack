@@ -1,12 +1,6 @@
-"""
-The one place that decides which rows a user may see.
-
-Every model that belongs to a user gets OwnedQuerySet as its manager and names
-the path to its owner in `owner_field`. Every view that touches those models
-inherits OwnedObjectMixin, whose get_queryset() is built from for_user(). A view
-never filters by user itself, so there is nothing to forget: asking for another
-user's object simply isn't in the queryset, and Django answers 404.
-"""
+# Which rows a user can see, decided in one place. User-owned models use
+# OwnedQuerySet and say who owns them in `owner_field`; views use OwnedObjectMixin.
+# Someone else's object just isn't in the queryset, so it's a 404.
 
 from django.db import models
 
@@ -19,8 +13,6 @@ class OwnedQuerySet(models.QuerySet):
 
 
 class OwnedObjectMixin:
-    """For class-based views: limit get_queryset() (and so get_object()) to the user's rows."""
-
     model = None
 
     def get_queryset(self):

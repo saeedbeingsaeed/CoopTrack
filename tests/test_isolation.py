@@ -1,7 +1,4 @@
-"""
-One user must never be able to view, edit, move or delete another user's data.
-Each test signs in as `user` and goes after `other_user`'s rows.
-"""
+# Signed in as `user`, try to get at `other_user`'s data.
 
 import pytest
 from django.urls import reverse
@@ -85,7 +82,7 @@ def test_cannot_attach_another_users_resume_version(signed_in, user, other_user)
 
 
 def test_cannot_take_over_another_users_application_by_editing_mine(signed_in, user, theirs, make_application):
-    """Posting a `user` field is ignored: the form doesn't include it and save() sets the owner."""
+    # A posted `user` field is ignored.
     mine = make_application(user)
 
     signed_in.post(

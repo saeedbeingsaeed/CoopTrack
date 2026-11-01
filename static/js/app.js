@@ -1,6 +1,6 @@
-// Small behaviours shared by every page. No framework, no build step.
+// Shared behaviour for every page.
 
-// Flash messages: dismiss on click, and fade out on their own after a while.
+// Flash messages: click to dismiss, or they fade out.
 document.addEventListener("click", (event) => {
   const button = event.target.closest("[data-dismiss]");
   if (button) button.closest(".toast")?.remove();
@@ -15,7 +15,7 @@ function autoDismissToasts() {
 document.addEventListener("DOMContentLoaded", autoDismissToasts);
 document.addEventListener("htmx:afterSettle", autoDismissToasts);
 
-// Close an open <details> dropdown when clicking elsewhere or pressing Escape.
+// Close open dropdowns on outside click or Escape.
 document.addEventListener("click", (event) => {
   document.querySelectorAll("details[open]").forEach((menu) => {
     if (!menu.contains(event.target)) menu.removeAttribute("open");
@@ -29,19 +29,16 @@ document.addEventListener("keydown", (event) => {
   });
 });
 
-// Show the top progress bar for any HTMX request, wherever it starts.
 document.addEventListener("htmx:beforeRequest", () => document.getElementById("page-progress")?.classList.add("htmx-request"));
 document.addEventListener("htmx:afterRequest", () => document.getElementById("page-progress")?.classList.remove("htmx-request"));
 
-// Server-sent toasts: views reply with an HX-Trigger header like {"toast": {"message": "..."}}.
-// After a move it also has "undo_url", which adds an Undo button.
+// Toasts sent by the server in HX-Trigger. After a move there's also an undo_url.
 document.addEventListener("toast", (event) => showToast(event.detail.message, "info", event.detail.undo_url));
 
 function csrfToken() {
   return JSON.parse(document.body.getAttribute("hx-headers"))["X-CSRFToken"];
 }
 
-// Fire the events named in an HX-Trigger header, the same way HTMX would.
 function fireServerEvents(header) {
   if (!header) return;
   for (const [name, detail] of Object.entries(JSON.parse(header))) {
@@ -62,8 +59,7 @@ async function undoMove(url, toast) {
   }
 }
 
-// A control that saves on change (data-current holds the saved value) goes back
-// to that value if the save fails, so the page never shows something unsaved.
+// Dropdowns that save on change go back to the saved value if the save fails.
 document.addEventListener("htmx:afterRequest", (event) => {
   const control = event.detail.elt;
   if (!("current" in control.dataset)) return;
@@ -71,7 +67,7 @@ document.addEventListener("htmx:afterRequest", (event) => {
   else control.value = control.dataset.current;
 });
 
-// A failed HTMX request should never fail silently. A 409 comes with its own message.
+// A 409 comes with its own message.
 document.addEventListener("htmx:responseError", (event) => {
   const xhr = event.detail.xhr;
   const text =
@@ -108,7 +104,7 @@ function showToast(text, level, undoUrl) {
 }
 window.showToast = showToast;
 
-// Buttons that start slow work (like setting up the demo) say so and can't be double-clicked.
+// Slow buttons (like the demo) show a loading label and can't be double-clicked.
 document.addEventListener("submit", (event) => {
   const button = event.target.querySelector("[data-loading-text]");
   if (!button) return;
@@ -117,7 +113,7 @@ document.addEventListener("submit", (event) => {
   button.setAttribute("aria-busy", "true");
   button.textContent = button.dataset.loadingText;
 });
-// Coming back with the browser's Back button can restore the page as it was left; reset those buttons.
+// Reset them if the user comes back with the Back button.
 window.addEventListener("pageshow", () => {
   document.querySelectorAll("[data-loading-text][aria-busy]").forEach((button) => {
     button.disabled = false;

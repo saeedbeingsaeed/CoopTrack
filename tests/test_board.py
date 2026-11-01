@@ -89,7 +89,6 @@ def test_cards_have_a_move_menu_for_keyboard_users(signed_in, user, make_applica
 
     assert f'id="move-{application.pk}"' in content
     assert f'aria-label="Move {application.company}"' in content
-    # The menu offers exactly the moves the card's current stage allows (State pattern).
     assert content.count('name="to" value=') == len(application.state.next_stages)
 
 

@@ -1,4 +1,4 @@
-"""Usage numbers for the admin-only metrics page, counted by the database."""
+# Numbers for the staff-only metrics page.
 
 import datetime
 
@@ -20,8 +20,7 @@ def collect(now=None):
     users = get_user_model().objects
 
     def active_since(moment):
-        # Active = changed something: edited or added an application, or moved one.
-        # This comes from data we already store, so nothing extra is tracked.
+        # Active = added, edited or moved an application.
         return Exists(Application.objects.filter(user=OuterRef("pk"), updated_at__gte=moment)) | Exists(
             StageChange.objects.filter(application__user=OuterRef("pk"), changed_at__gte=moment)
         )

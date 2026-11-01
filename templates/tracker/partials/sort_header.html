@@ -1,4 +1,3 @@
-{# A sortable column header. It's a submit button for the filters form, so sorting keeps the search and stage. #}
 <th scope="col" class="px-2 py-1.5 font-medium sm:px-2 {{ classes }}" {% if sort == key %}aria-sort="{% if key == 'applied' or key == 'updated' %}descending{% else %}ascending{% endif %}"{% endif %}>
   <button type="submit" form="filters" name="sort" value="{{ key }}"
           class="inline-flex items-center gap-1 rounded-md px-2 py-1 hover:bg-zinc-200/60 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100 {% if sort == key %}text-zinc-900 dark:text-zinc-100{% endif %}">

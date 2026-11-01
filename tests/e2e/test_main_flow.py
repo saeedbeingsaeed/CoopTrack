@@ -1,8 +1,4 @@
-"""
-End-to-end: a real browser drives the real app, JavaScript included.
-
-    pytest -m e2e        (needs `playwright install chromium` once, and the CSS built)
-"""
+# Real browser tests. Run with `pytest -m e2e` (needs `playwright install chromium` and the CSS built).
 
 import datetime
 

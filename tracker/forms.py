@@ -4,7 +4,7 @@ from .models import Application, ResumeVersion, Stage
 
 
 class DateInput(forms.DateInput):
-    input_type = "date"  # the browser's native date picker, which works well on phones
+    input_type = "date"
 
     def __init__(self, **kwargs):
         super().__init__(format="%Y-%m-%d", **kwargs)
@@ -47,11 +47,10 @@ class ApplicationForm(forms.ModelForm):
     def __init__(self, *args, user, **kwargs):
         super().__init__(*args, **kwargs)
         self.user = user
-        # Only this user's resumes can be picked. Posting another user's id fails
-        # validation ("Select a valid choice"), so it can't be linked.
+        # Only this user's resumes.
         self.fields["resume_version"].queryset = ResumeVersion.objects.for_user(user)
         self.fields["resume_version"].empty_label = "Not tracked"
-        # Only offer stages the current one can move to (same rules as the board and CLI).
+        # Only the stages the current one can move to.
         if self.instance.pk:
             current = self.instance.state
             allowed = {current.stage, *current.next_stages}
@@ -66,7 +65,6 @@ class ApplicationForm(forms.ModelForm):
         application.user = self.user
         name = self.cleaned_data.get("new_resume", "").strip()
         if name:
-            # Reuse a version with the same name (ignoring case) rather than duplicate it.
             resume = ResumeVersion.objects.for_user(self.user).filter(name__iexact=name).first()
             application.resume_version = resume or ResumeVersion.objects.create(user=self.user, name=name)
         if commit:

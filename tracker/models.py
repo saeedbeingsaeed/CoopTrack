@@ -64,15 +64,11 @@ class Application(models.Model):
         return f"{self.role} at {self.company}"
 
     def save(self, *args, **kwargs):
-        """
-        Saving is the single place stage history is written. Whatever changes
-        the stage (the edit form, drag and drop, the keyboard menu, CSV import)
-        goes through here, so no path can skip the history row. The application
-        and its history row are saved in one transaction: both or neither.
-        """
+        # Every stage change goes through here (form, drag and drop, menus, CSV, CLI),
+        # so the history row can't be skipped. Both are saved in one transaction.
         is_new = self._state.adding
         previous = getattr(self, "_saved_stage", None)
-        self.state.before_save(self)  # e.g. past Saved, fill in the applied date
+        self.state.before_save(self)
         if kwargs.get("update_fields") is not None:
             kwargs["update_fields"] = {*kwargs["update_fields"], "date_applied"}
         with transaction.atomic():
@@ -91,7 +87,7 @@ class Application(models.Model):
     @classmethod
     def from_db(cls, *args, **kwargs):
         instance = super().from_db(*args, **kwargs)
-        # Remember the stage as loaded so save() can tell whether it changed.
+        # Remember the loaded stage so save() can tell if it changed.
         instance._saved_stage = instance.__dict__.get("stage")
         return instance
 
@@ -136,7 +132,7 @@ class StageChange(models.Model):
     owner_field = "application__user"
 
     application = models.ForeignKey(Application, on_delete=models.CASCADE, related_name="history")
-    from_stage = models.PositiveSmallIntegerField(choices=Stage, null=True, blank=True)  # null: just created
+    from_stage = models.PositiveSmallIntegerField(choices=Stage, null=True, blank=True)
     to_stage = models.PositiveSmallIntegerField(choices=Stage)
     changed_at = models.DateTimeField(default=timezone.now)
     via = models.CharField(max_length=10, choices=Via, default=Via.WEB)

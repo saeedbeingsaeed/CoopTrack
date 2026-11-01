@@ -100,7 +100,7 @@ def test_metrics_count_deletions(client, signed_in, django_user_model):
     assert client.get(reverse("metrics")).context["metrics"]["deleted"] == 1
 
 
-# --- Demo rate limit ------------------------------------------------------------------------
+# Demo rate limit
 
 
 def test_demo_creation_is_limited_per_hour(client, settings, monkeypatch):

@@ -44,7 +44,6 @@ def test_editing_other_fields_records_nothing(user, make_application):
 
 
 def test_changing_stage_through_a_loaded_object_is_recorded(user, make_application):
-    """The edit form loads the object fresh and saves it; that path must record history too."""
     created = make_application(user)
     loaded = Application.objects.get(pk=created.pk)
     loaded.stage = Stage.OFFER

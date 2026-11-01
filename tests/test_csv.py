@@ -29,7 +29,7 @@ def read_export(client):
     return list(csv.reader(io.StringIO(response.content.decode("utf-8-sig"))))
 
 
-# --- Export ----------------------------------------------------------------------
+# Export
 
 
 def test_export_has_headers_and_my_rows_only(signed_in, user, other_user, make_application):
@@ -58,7 +58,7 @@ def test_export_neutralises_spreadsheet_formulas(signed_in, user, make_applicati
     assert row[-1] == "'+1 referral"
 
 
-# --- Import ----------------------------------------------------------------------
+# Import
 
 GOOD = """Company,Role,Stage,Date applied,Deadline,Resume version,Notes
 Shopify,Backend Intern,Interview,2026-09-01,,SWE v3,Referral

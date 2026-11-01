@@ -1,9 +1,5 @@
-"""
-CSV export and import.
-
-Import is all-or-nothing: every row is validated first, using the same form as
-the "Add application" page, and nothing is saved unless every row is valid.
-"""
+# CSV export and import. Import is all-or-nothing: every row is checked with the
+# same form as "Add application", and nothing is saved unless they all pass.
 
 import csv
 import datetime
@@ -28,17 +24,14 @@ COLUMNS = [
     ("notes", "Notes"),
 ]
 MAX_ROWS = 1000
-MAX_BYTES = 1024 * 1024  # 1 MB is roughly 5,000 rows; plenty for one job search
+MAX_BYTES = 1024 * 1024  # about 5,000 rows
 
 
-# --- Export ----------------------------------------------------------------------
+# Export
 
 
 def safe_cell(value):
-    """
-    Spreadsheet apps run cells that start with = + - @ as formulas (CSV injection),
-    so prefix those with an apostrophe. Spreadsheets hide the apostrophe.
-    """
+    # Excel runs cells starting with = + - @ as formulas, so prefix them with an apostrophe.
     text = "" if value is None else str(value)
     return f"'{text}" if text[:1] in ("=", "+", "-", "@", "\t", "\r") else text
 
@@ -64,18 +57,18 @@ def write_csv(user, out):
         )
 
 
-# --- Import ----------------------------------------------------------------------
+# Import
 
 
 class CSVImportError(Exception):
-    """A problem with the whole file (not a single row)."""
+    pass
 
 
 def _normalise(header):
     return " ".join(header.replace("_", " ").strip().lower().split())
 
 
-# Accept our own headers, the field names, and a few obvious synonyms.
+# Accept our headers, the field names and a few common alternatives.
 HEADER_ALIASES = {_normalise(label): field for field, label in COLUMNS}
 HEADER_ALIASES |= {_normalise(field): field for field, _ in COLUMNS}
 HEADER_ALIASES |= {
@@ -96,12 +89,11 @@ def parse_stage(text):
 
 
 def read_rows(uploaded_file):
-    """Decode the upload and return (rows as dicts keyed by field name)."""
     if uploaded_file.size > MAX_BYTES:
         raise CSVImportError("That file is over 1 MB. Split it into smaller files.")
     raw = uploaded_file.read()
     try:
-        text = raw.decode("utf-8-sig")  # -sig strips the byte-order mark Excel adds
+        text = raw.decode("utf-8-sig")  # utf-8-sig drops Excel's BOM
     except UnicodeDecodeError:
         raise CSVImportError("That file isn't UTF-8 text. In Excel, use Save As → “CSV UTF-8”.") from None
 
@@ -116,7 +108,7 @@ def read_rows(uploaded_file):
     rows = []
     for row in reader:
         values = {field: (row.get(header) or "").strip() for header, field in mapping.items() if field}
-        if any(values.values()):  # skip blank lines
+        if any(values.values()):
             rows.append(values)
         if len(rows) > MAX_ROWS:
             raise CSVImportError(f"That file has more than {MAX_ROWS} applications. Split it into smaller files.")
@@ -126,13 +118,10 @@ def read_rows(uploaded_file):
 
 
 def import_csv(user, uploaded_file):
-    """
-    Returns (imported_count, skipped_count, errors). If errors is non-empty,
-    nothing was saved. Raises CSVImportError for problems with the whole file.
-    """
+    # Returns (imported, skipped, errors). Nothing is saved if there are errors.
     rows = read_rows(uploaded_file)
     forms, errors = [], []
-    for number, row in enumerate(rows, start=2):  # row 1 is the header
+    for number, row in enumerate(rows, start=2):
         stage = parse_stage(row.get("stage", ""))
         if stage is None:
             errors.append((number, "Stage", f"“{row['stage']}” isn't a stage. Use one of: {', '.join(Stage.labels)}."))
@@ -149,7 +138,7 @@ def import_csv(user, uploaded_file):
     if errors:
         return 0, 0, errors
 
-    # Skip rows that already exist, so importing the same file twice doesn't duplicate.
+    # Importing the same file twice shouldn't duplicate rows.
     existing = {
         (c.lower(), r.lower(), d)
         for c, r, d in Application.objects.for_user(user).values_list("company", "role", "date_applied")
@@ -171,7 +160,7 @@ def import_csv(user, uploaded_file):
 
 
 def _dedupe_key(data):
-    # Mirror Application.save(): past Saved with no date means "applied today".
+    # Same as save(): past Saved with no date means applied today.
     date = data["date_applied"]
     if date is None and data["stage"] != Stage.SAVED:
         date = timezone.localdate()
@@ -179,10 +168,7 @@ def _dedupe_key(data):
 
 
 def _backdate_history(application):
-    """
-    An imported application wasn't really created today. Date its first history
-    row to the day it was applied to, so time-in-stage and stats make sense.
-    """
+    # Date the first history row to when it was applied, so stats aren't all "today".
     if application.date_applied:
         when = timezone.make_aware(datetime.datetime.combine(application.date_applied, datetime.time(12)))
         application.history.update(changed_at=min(when, timezone.now()))
