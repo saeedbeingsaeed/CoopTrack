@@ -2,8 +2,7 @@
 
 Find co-op and internship postings and track every application on one board.
 
-My SFWRTECH 4SA3 term project (Saeed Bafana, 400680402). It's built on
-[Offerboard](https://github.com/saeedbeingsaeed/OfferBoard), a job tracker I made earlier.
+My SFWRTECH 4SA3 term project.
 
 ![The board](docs/screenshots/board.png)
 
